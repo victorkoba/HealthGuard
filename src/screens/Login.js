@@ -1,27 +1,59 @@
 import React, { useState } from "react";
 import {
   Image,
-  SafeAreaView,
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator
 } from "react-native";
+import { useFonts } from 'expo-font';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    'Roboto-Bold': require('../../assets/fonts/KantumruyPro-VariableFont_wght.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  }
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("https://SEU_ENDPOINT_API/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Login efetuado com sucesso!");
+        // Aqui você pode navegar para a próxima tela
+      } else {
+        alert("Email ou senha incorretos");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao fazer login");
+    }
+    setLoading(false);
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Logo / Título */}
+    <View style={styles.container}>
       <Image style={styles.logo} source={require('../assets/logo.png')} />
-      {/* Card de login */}
+
       <View style={styles.loginCard}>
         <Text style={styles.title}>Entre na sua{"\n"}conta</Text>
 
-        {/* Input Email */}
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -30,7 +62,6 @@ export default function LoginScreen() {
           onChangeText={setEmail}
         />
 
-        {/* Input Senha */}
         <TextInput
           style={styles.input}
           placeholder="Senha"
@@ -40,17 +71,19 @@ export default function LoginScreen() {
           onChangeText={setSenha}
         />
 
-        {/* Botão Login */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
-        {/* Esqueceu a senha */}
         <TouchableOpacity>
           <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -62,9 +95,9 @@ const styles = StyleSheet.create({
   },
   logo: {
     marginTop: 50,
-    marginBottom: 30,
-    alignItems: "center",
-    height: 500,
+    width: 200,
+    height: 80,
+    resizeMode: "contain",
   },
   loginCard: {
     flex: 1,
@@ -75,20 +108,22 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
     marginBottom: 30,
+    fontFamily: "Roboto-Bold",
   },
   input: {
     width: "80%",
     backgroundColor: "#9fbfae",
     borderRadius: 8,
-    padding: 12,
+    padding: 14,
     marginVertical: 10,
     fontSize: 16,
     color: "#fff",
+    fontFamily: "Roboto-Bold",
   },
   button: {
     width: "80%",
@@ -97,16 +132,19 @@ const styles = StyleSheet.create({
     padding: 15,
     alignItems: "center",
     marginTop: 20,
+    elevation: 3,
   },
   buttonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+    fontFamily: "Roboto-Bold",
   },
   forgotPassword: {
     marginTop: 15,
     color: "#d0e6db",
     fontSize: 14,
     textDecorationLine: "underline",
+    fontFamily: "Roboto-Bold",
   },
 });
