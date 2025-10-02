@@ -10,10 +10,22 @@ import {
 } from "react-native";
 import { useFonts } from 'expo-font';
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function LoginScreen({navigation}) {
+const [email, setEmail] = useState("");
+const [senha, setSenha] = useState("");
+const [loading, setLoading] = useState(false);
+
+const handleLogin = () => {
+  if (email === "victor@gmail.com" && senha === "123456") {
+    navigation.navigate("Inicio");
+  } else {
+    alert("Email ou senha incorretos");
+  }
+};
+
+  // const [email, setEmail] = useState("");
+  // const [senha, setSenha] = useState("");
+  // const [loading, setLoading] = useState(false);
 
   const [fontsLoaded] = useFonts({
     'Roboto-Bold': require('../../assets/fonts/KantumruyPro-VariableFont_wght.ttf'),
@@ -23,29 +35,28 @@ export default function LoginScreen() {
     return <ActivityIndicator size="large" style={{ flex: 1 }} />;
   }
 
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("https://SEU_ENDPOINT_API/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha })
-      });
+  // const handleLogin = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch("https://SEU_ENDPOINT_API/login", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, senha })
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (data.success) {
-        alert("Login efetuado com sucesso!");
-        // Aqui você pode navegar para a próxima tela
-      } else {
-        alert("Email ou senha incorretos");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao fazer login");
-    }
-    setLoading(false);
-  };
+  //     if (data.success) {
+  //       alert("Login efetuado com sucesso!");
+  //     } else {
+  //       alert("Email ou senha incorretos");
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     alert("Erro ao fazer login");
+  //   }
+  //   setLoading(false);
+  // };
 
   return (
     <View style={styles.container}>
@@ -57,7 +68,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#d9e6dd"
+          placeholderTextColor="#fff"
           value={email}
           onChangeText={setEmail}
         />
@@ -65,7 +76,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Senha"
-          placeholderTextColor="#d9e6dd"
+          placeholderTextColor="#fff"
           secureTextEntry
           value={senha}
           onChangeText={setSenha}
@@ -92,23 +103,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
+    justifyContent: "center",
   },
   logo: {
-    marginTop: 50,
-    width: 200,
-    height: 80,
+    height: 350,
+    width: 350,
     resizeMode: "contain",
   },
   loginCard: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#5d8b71",
+    backgroundColor: "#679880",
     borderTopLeftRadius: 120,
     alignItems: "center",
     paddingTop: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 42,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
@@ -117,7 +128,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "80%",
-    backgroundColor: "#9fbfae",
+    backgroundColor: "#9FD1B7",
     borderRadius: 8,
     padding: 14,
     marginVertical: 10,
@@ -127,7 +138,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "80%",
-    backgroundColor: "#214631",
+    backgroundColor: "#305F49",
     borderRadius: 8,
     padding: 15,
     alignItems: "center",
@@ -136,14 +147,14 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: "bold",
     fontFamily: "Roboto-Bold",
   },
   forgotPassword: {
     marginTop: 15,
-    color: "#d0e6db",
-    fontSize: 14,
+    color: "#fff",
+    fontSize: 16,
     textDecorationLine: "underline",
     fontFamily: "Roboto-Bold",
   },
