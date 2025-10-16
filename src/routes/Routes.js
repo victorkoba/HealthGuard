@@ -9,9 +9,12 @@ import Cadastro from "../screens/Cadastro";
 import Duvidas from "../screens/Duvidas";
 import Monitoramento from "../screens/Monitoramento";
 import Relatorios from "../screens/Relatorios";
-import Gerenciamento from "../screens/Gerenciamento";
+import GerenciarTemperatura from "../screens/GerenciarTemperatura";
+import GerenciarUsuarios from "../screens/GerenciarUsuarios";
 
 const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
+
 export default function NativeStack() {
   return (
     <Stack.Navigator
@@ -23,51 +26,23 @@ export default function NativeStack() {
         component={Login}
       />
       <Stack.Screen
-        name="Perfil"
-        component={Perfil}
-      />
-      <Stack.Screen
-        name="Inicio"
-        component={Inicio}
-      />
-      <Stack.Screen
-        name="Cadastro"
-        component={Cadastro}
-      />
-      <Stack.Screen
-        name="Duvidas"
-        component={Duvidas}
-      />
-      <Stack.Screen
-        name="Monitoramento"
-        component={Monitoramento}
-      />
-      <Stack.Screen
-        name="Relatorios"
-        component={Relatorios}
-      />
-      <Stack.Screen
-        name="Gerenciamento"
-        component={Gerenciamento}
+        name="App"
+        component={DrawerNavigator}
       />
     </Stack.Navigator>
   );
 }
 
-const Drawer = createDrawerNavigator();
 export function DrawerNavigator() {
   return (
-    <Drawer.Navigator
-      screenOptions={{ headerShown: false }}
-      initialRouteName="Inicio"
-    >
-      <Drawer.Screen
-        name="Perfil"
-        component={Perfil}
-      />
+    <Drawer.Navigator screenOptions={{ headerShown: false }}>
       <Drawer.Screen
         name="Inicio"
         component={Inicio}
+      />
+      <Drawer.Screen
+        name="Perfil"
+        component={Perfil}
       />
       <Drawer.Screen
         name="Cadastro"
@@ -86,8 +61,12 @@ export function DrawerNavigator() {
         component={Relatorios}
       />
       <Drawer.Screen
-        name="Gerenciamento"
-        component={Gerenciamento}
+        name="GerenciarTemperatura"
+        component={GerenciarTemperatura}
+      />
+      <Drawer.Screen
+        name="GerenciarUsuarios"
+        component={GerenciarUsuarios}
       />
     </Drawer.Navigator>
   );

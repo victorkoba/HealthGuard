@@ -1,60 +1,106 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import {
+  Image,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { useFonts } from "expo-font";
 
-export default function HomeScreen() {
+export default function HomeScreen({navigation}) {
   return (
     <View style={styles.container}>
-      
-      {/* Logo */}
       <View style={styles.logoContainer}>
         <Image
-          source={{ uri: "CAMINHO_DO_LOGO" }}
           style={styles.logo}
+          source={require("../assets/logo.png")}
         />
       </View>
 
-      {/* Conteúdo principal */}
       <View style={styles.content}>
-        <Text style={styles.title}>Página Inicial</Text>
+        <Text style={styles.title}>
+          Página Inicial
+        </Text>
 
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={{ uri: "CAMINHO_DO_ICONE1" }}
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>Ver perfil</Text>
+        <TouchableOpacity style={styles.button}
+        onPress={() => navigation.navigate("Perfil")}
+        >
+          <TouchableOpacity
+            style={styles.iconButton}
+          >
+            <Image
+              style={styles.icon}
+              source={require("../assets/icon-perfil.png")}
+            />
+          </TouchableOpacity>
+          <Text style={styles.buttonText}>
+            Ver perfil
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={{ uri: "CAMINHO_DO_ICONE2" }}
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>Gerenciamento de temperatura</Text>
+        <TouchableOpacity style={styles.button}
+        onPress={() => navigation.navigate("GerenciarTemperatura")}
+        >
+          <TouchableOpacity
+            style={styles.iconButton}
+          >
+            <Image
+              style={styles.icon}
+              source={require("../assets/icon-temp.png")}
+            />
+          </TouchableOpacity>
+          <Text style={styles.buttonText}>
+            Gerenciar temperatura
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={{ uri: "CAMINHO_DO_ICONE3" }}
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>Relatórios</Text>
+        <TouchableOpacity style={styles.button}
+        onPress={() => navigation.navigate("Relatorios")}
+        >
+          <TouchableOpacity
+            style={styles.iconButton}
+          >
+            <Image
+              style={styles.icon}
+              source={require("../assets/icon-relatorios.png")}
+            />
+          </TouchableOpacity>
+          <Text style={styles.buttonText}>
+            Relatórios
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={{ uri: "CAMINHO_DO_ICONE4" }}
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>Dúvidas frequentes</Text>
+        <TouchableOpacity style={styles.button}
+        onPress={() => navigation.navigate("Duvidas")}
+        >
+          <TouchableOpacity
+            style={styles.iconButton}
+          >
+            <Image
+              style={styles.icon}
+              source={require("../assets/icon-duvidas.png")}
+            />
+          </TouchableOpacity>
+          <Text style={styles.buttonText}>
+            Dúvidas frequentes
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
-          <Image
-            source={{ uri: "CAMINHO_DO_ICONE5" }}
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>Gerenciar usuários</Text>
+        <TouchableOpacity style={styles.button}
+        onPress={() => navigation.navigate("GerenciarUsuarios")}
+        >
+          <TouchableOpacity
+            style={styles.iconButton}
+          >
+            <Image
+              style={styles.icon}
+              source={require("../assets/icon-gerenciar-usuarios.png")}
+            />
+          </TouchableOpacity>
+          <Text style={styles.buttonText}>
+            Gerenciar usuários
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -65,52 +111,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  logoContainer: {
-    backgroundColor: "#fff",
     alignItems: "center",
-    paddingVertical: 30,
+    justifyContent: "center",
   },
   logo: {
-    width: 150, // tamanho predefinido do logo
-    height: 50,
-    resizeMode: "contain",
+    height: 350,
+    width: 350,
+    marginBottom: -80,
+    marginTop: -80,
   },
   content: {
     flex: 1,
-    backgroundColor: "#679880", // verde mais claro
-    borderTopLeftRadius: 40,
-    padding: 20,
+    width: "100%",
+    backgroundColor: "#679880",
+    borderTopLeftRadius: 120,
+    alignItems: "center",
+    paddingTop: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 42,
     fontWeight: "bold",
     color: "#fff",
-    marginBottom: 20,
+    marginBottom: 30,
     alignSelf: "center",
+    marginTop: 5,
   },
   button: {
+    width: "80%",
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#305F49",
+    shadowOpacity: 0.7,
+    shadowOffset: { width: 4, height: 4 },
     shadowRadius: 5,
     elevation: 3,
   },
   icon: {
-    width: 30, // tamanho predefinido do ícone
-    height: 30,
-    marginRight: 15,
-    resizeMode: "contain",
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    margin: "auto",
+  },
+  iconButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: "#305F49",
+    marginRight: 20,
   },
   buttonText: {
-    fontSize: 16,
-    color: "#305F49", // verde escuro
+    fontSize: 20,
+    color: "#305F49",
     fontWeight: "600",
   },
 });

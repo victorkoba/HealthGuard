@@ -6,20 +6,20 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import { useFonts } from 'expo-font';
 
 export default function LoginScreen({navigation}) {
 const [email, setEmail] = useState("");
 const [senha, setSenha] = useState("");
-const [loading, setLoading] = useState(false);
 
 const handleLogin = () => {
-  if (email === "victor@gmail.com" && senha === "123456") {
-    navigation.navigate("Inicio");
+  if (email === "123" && senha === "123") {
+    navigation.navigate("App");
   } else {
-    alert("Email ou senha incorretos");
+    Alert.alert("Erro", "Email ou senha incorretos");
   }
 };
 
@@ -83,11 +83,7 @@ const handleLogin = () => {
         />
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
             <Text style={styles.buttonText}>Login</Text>
-          )}
         </TouchableOpacity>
 
         <TouchableOpacity>
