@@ -45,17 +45,19 @@ export default function PerfilScreen({ navigation }) {
         />
       </View>
       <View style={styles.content}>
+        <View style={styles.contentEdit}>
         <Image
           source={require("../assets/icon-perfil.png")}
           style={styles.iconPerfil}
         />
+        </View>
         <Text style={styles.nome}>Victor Koba</Text>
       
 
       <TextInput
-        style={styles.input}
+        style={styles.inputEmail}
         placeholder="Email"
-        placeholderTextColor="#cce0d2"
+        placeholderTextColor="#ffffffc7"
         editable={false}
         value={email}
       />
@@ -63,7 +65,7 @@ export default function PerfilScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Alterar Senha"
-        placeholderTextColor="#305F49"
+        placeholderTextColor="#fff"
         secureTextEntry
         value={novaSenha}
         onChangeText={setNovaSenha}
@@ -72,7 +74,7 @@ export default function PerfilScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Confirmar Senha"
-        placeholderTextColor="#305F49"
+        placeholderTextColor="#fff"
         secureTextEntry
         value={confirmarSenha}
         onChangeText={setConfirmarSenha}
@@ -107,16 +109,20 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     backgroundColor: "#679880",
-    borderTopLeftRadius: 120,
+    borderTopLeftRadius: 80,
     alignItems: "center",
     paddingTop: 40,
   },
   iconPerfil: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: "#557D68",
-    marginBottom: 10,
+    margin: 'auto',
+  },
+  contentEdit: {
+    backgroundColor: "#305F49",
+    borderRadius: 200,
+    width: 200,
+    height: 200,
   },
   iconEdit: {
     position: "absolute",
@@ -127,21 +133,30 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   editImage: {
-    width: 20,
-    height: 20,
+    width: 50,
+    height: 50,
   },
   nome: {
     color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
+    marginBottom: 15,
   },
   input: {
-    backgroundColor: "#8FBBA1",
+    backgroundColor: "#9FD1B7",
     width: "80%",
     borderRadius: 8,
     padding: 10,
     marginBottom: 15,
     color: "#fff",
+  },
+  inputEmail: {
+    backgroundColor: "#9fd1b781",
+    width: "80%",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    color: "#ffffff86",
   },
   btnConfirmar: {
     backgroundColor: "#305F49",
