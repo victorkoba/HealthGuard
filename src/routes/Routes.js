@@ -3,6 +3,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Image } from "react-native";
 
+import SplashScreen from "../screens/splashscreen";
 import Inicio from "../screens/Inicio";
 import Perfil from "../screens/Perfil";
 import Login from "../screens/Login";
