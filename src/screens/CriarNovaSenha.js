@@ -86,7 +86,7 @@ const handleLogin = () => {
             <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('RedefinirSenha')}>
+        <TouchableOpacity>
           <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
         </TouchableOpacity>
       </View>

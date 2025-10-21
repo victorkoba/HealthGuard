@@ -9,8 +9,7 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-
+import { Ionicons } from "@expo/vector-icons";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -19,8 +18,8 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
     <ScrollView contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}>
       <View style={styles.logoContainer}>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu" size={30} color="#305F49" />
+        <TouchableOpacity style={styles.drawer} onPress={() => navigation.openDrawer()}>
+          <Ionicons name="menu" size={32} color="#305F49" />
         </TouchableOpacity>
         <Image
           style={styles.logo}
@@ -37,11 +36,11 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
               <Text style={styles.buttonText}>Mudar freezer</Text>
             </TouchableOpacity>
             <View style={styles.freezerLogo}>
-            <Image
-              style={styles.iconFreezer}
-              source={require("../assets/icon-freezer.png")}
-            />
-            <Text style={styles.freezerLabel}>Freezer 2</Text>
+              <Image
+                style={styles.iconFreezer}
+                source={require("../assets/icon-freezer.png")}
+              />
+              <Text style={styles.freezerLabel}>Freezer 2</Text>
             </View>
           </View>
         </View>
@@ -54,59 +53,59 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
 
         <View style={styles.cardTemp}>
           <View style={styles.InfoTime}>
-          <Image
+            <Image
               style={styles.iconTime}
               source={require("../assets/icon-time.png")}
             />
-          <Text style={styles.subtitle}>
-            Últimas temperaturas registradas nas 24 horas
-          </Text>
+            <Text style={styles.subtitle}>
+              Últimas temperaturas registradas nas 24 horas
+            </Text>
           </View>
           <View style={styles.chart}>
-<LineChart
-  data={{
-    labels: ["13:00", "13:30", "14:00", "Agora"],
-    datasets: [{ data: [9, 10, 12, 8] }],
-  }}
-  width={screenWidth * 1}
-  height={200}
-  yAxisSuffix="°"
-  chartConfig={{
-    backgroundGradientFrom: "transparent",
-    backgroundGradientTo: "transparent",
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(48, 95, 73, ${opacity})`,
-    labelColor: () => "#fff",
-    propsForDots: {
-      r: "5",
-      strokeWidth: "2",
-      stroke: "#305F49",
-      fill: "#305F49",
-    },
-  }}
-  withInnerLines={false} // opcional, remove linhas internas
-  withVerticalLines={false} // deixa o gráfico mais limpo
-  withHorizontalLines={false}
-  bezier
-  style={{
-    borderRadius: 10,
-    marginLeft: 30,
-    fontWeight: '600',
-  }}
-/>
+            <LineChart
+              data={{
+                labels: ["13:00", "13:30", "14:00", "Agora"],
+                datasets: [{ data: [9, 10, 12, 8], color: () => "#244C38" }],
+              }}
+              width={screenWidth * 1}
+              height={200}
+              yAxisSuffix="°"
+              chartConfig={{
+                backgroundGradientFrom: "transparent",
+                backgroundGradientTo: "transparent",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(48, 95, 73, ${opacity})`,
+                labelColor: () => "#fff",
+                propsForDots: {
+                  r: "5",
+                  strokeWidth: "2",
+                  stroke: "#305F49",
+                  fill: "#305F49",
+                },
+              }}
+              withInnerLines={false}
+              withVerticalLines={false}
+              withHorizontalLines={false}
+              bezier
+              style={{
+                borderRadius: 10,
+                marginLeft: 30,
+                fontWeight: '600',
+              }}
+            />
 
-</View>
+          </View>
         </View>
 
         <View style={styles.cardUltimasTemps}>
-          <View style={styles.ultimasTemps}> 
-          <Image
-          style={styles.iconCalender}
-          source={require("../assets/icon-calender.png")}
-          />
-          <Text style={styles.subtitle}>
-            Últimas temperaturas registradas nos últimos dias
-          </Text>
+          <View style={styles.ultimasTemps}>
+            <Image
+              style={styles.iconCalender}
+              source={require("../assets/icon-calender.png")}
+            />
+            <Text style={styles.subtitle}>
+              Últimas temperaturas registradas nos últimos dias
+            </Text>
           </View>
 
           <View style={styles.row}>
@@ -142,12 +141,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
   },
+
   logo: {
     height: 350,
     width: 350,
+  },
+  logoContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: 'center',
     marginBottom: -120,
     marginTop: -180,
+    paddingLeft: 40,
+    paddingRight: 20,
   },
+
+
   content: {
     width: "100%",
     backgroundColor: "#679880",
@@ -206,7 +215,7 @@ const styles = StyleSheet.create({
     height: 80,
     width: 80,
   },
-  
+
   freezerInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -235,12 +244,12 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor: "rgba(255,255,255, 0.5)",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 10,
     alignSelf: "flex-start",
     marginTop: 25,
+    backgroundColor: "rgba(255,255,255, 0.5)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
