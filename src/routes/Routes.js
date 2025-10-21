@@ -20,10 +20,14 @@ const Drawer = createDrawerNavigator();
 
 export default function NativeStack() {
   return (
-    <Stack.Navigator
+     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="Login"
+      initialRouteName="Splash"
     >
+      <Stack.Screen
+        name="Splash"
+        component={SplashScreen}
+      />
       <Stack.Screen
         name="Login"
         component={Login}
