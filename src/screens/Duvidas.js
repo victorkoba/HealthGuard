@@ -105,14 +105,14 @@ export default function Duvidas() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#305F49", // fundo principal padronizado
+    backgroundColor: "#679880", // fundo padronizado
   },
   scroll: {
     padding: 20,
     paddingBottom: 40,
   },
   headerContainer: {
-    backgroundColor: "#305F49",
+    backgroundColor: "#679880",
     borderBottomLeftRadius: 60,
     paddingVertical: 25,
   },
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   card: {
-    backgroundColor: "#679880", // cor intermediária
+    backgroundColor: "#9fd1b7", // cor do card
     borderRadius: 10,
     marginBottom: 10,
     overflow: "hidden",
@@ -137,17 +137,17 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#fff",
+    color: "#fff", // texto branco
     flex: 1,
     paddingRight: 10,
   },
   answerContainer: {
-    backgroundColor: "#EAF3EC", // cor clara para contraste
+    backgroundColor: "#fff", // mesma cor do card
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
   answer: {
-    color: "#305F49", // texto com cor principal
+    color: "#9fd1b7", // texto branco
     fontSize: 14,
     lineHeight: 20,
   },
