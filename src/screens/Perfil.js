@@ -30,10 +30,7 @@ export default function PerfilScreen({ navigation }) {
   };
 
   const handleSair = () => {
-    Alert.alert("Confirmação", "Deseja realmente sair?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Sim", onPress: () => navigation.navigate("Login") },
-    ]);
+      navigation.navigate("Login")
   };
 
   return (

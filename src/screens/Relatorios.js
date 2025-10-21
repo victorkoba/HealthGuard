@@ -269,6 +269,7 @@ const styles = StyleSheet.create({
     width: "90%",
     padding: 15,
     alignItems: "center",
+    marginBottom: 10,
   },
   downloadTitle: {
     color: "#fff",

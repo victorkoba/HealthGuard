@@ -8,6 +8,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -16,7 +17,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function Duvidas() {
+export default function Duvidas({navigation}) {
   const [expanded, setExpanded] = useState(null);
 
   const toggleExpand = (index) => {
@@ -66,38 +67,51 @@ export default function Duvidas() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={styles.logoContainer}>
+                    <TouchableOpacity style={styles.drawer} onPress={() => navigation.openDrawer()}>
+                      <Ionicons name="menu" size={32} color="#305F49" />
+                    </TouchableOpacity>
+                    <Image
+                      style={styles.logo}
+                      source={require("../assets/logo.png")}
+                    />
+            </View>
+      <View style={styles.content}>
         {/* Cabeçalho curvado */}
         <View style={styles.headerContainer}>
           <Text style={styles.title}>Dúvidas frequentes</Text>
         </View>
 
-        {/* Lista de perguntas */}
-        {perguntas.map((item, index) => (
-          <View key={index} style={styles.card}>
-            <TouchableOpacity
-              style={styles.question}
-              onPress={() => toggleExpand(index)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.questionText}>{item.pergunta}</Text>
-              <Ionicons
-                name={expanded === index ? "chevron-up" : "chevron-down"}
-                size={20}
-                color="#fff"
-              />
-            </TouchableOpacity>
+        {/* Lista de perguntas rolável */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {perguntas.map((item, index) => (
+            <View key={index} style={styles.card}>
+              <TouchableOpacity
+                style={styles.question}
+                onPress={() => toggleExpand(index)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.questionText}>{item.pergunta}</Text>
+                <Ionicons
+                  name={expanded === index ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color="#fff"
+                />
+              </TouchableOpacity>
 
-            {expanded === index && (
-              <View style={styles.answerContainer}>
-                <Text style={styles.answer}>{item.resposta}</Text>
-              </View>
-            )}
-          </View>
-        ))}
+              {expanded === index && (
+                <View style={styles.answerContainer}>
+                  <Text style={styles.answer}>{item.resposta}</Text>
+                </View>
+              )}
+            </View>
+          ))}
 
-        <Text style={styles.footer}>HealthGuard</Text>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -105,29 +119,47 @@ export default function Duvidas() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#679880", // fundo padronizado
+    backgroundColor: "#fff",
+    alignItems: "center",
+    paddingTop: 60,
   },
-  scroll: {
-    padding: 20,
-    paddingBottom: 40,
+    logo: {
+    height: 350,
+    width: 350,
   },
-  headerContainer: {
+  logoContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: 'center',
+    marginBottom: -120,
+    marginTop: -180,
+    paddingLeft: 40,
+    paddingRight: 20,
+  },
+  content: {
+    flex: 1,
+    width: "100%",
     backgroundColor: "#679880",
-    borderBottomLeftRadius: 60,
-    paddingVertical: 25,
+    borderTopLeftRadius: 80,
+    alignItems: "center",
+    paddingTop: 40,
   },
+
   title: {
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
+    marginBottom: 20,
   },
-  card: {
-    backgroundColor: "#9fd1b7", // cor do card
-    borderRadius: 10,
-    marginBottom: 10,
-    overflow: "hidden",
-  },
+card: {
+  width: "90%",
+  backgroundColor: "#9fd1b7",
+  borderRadius: 10,
+  marginBottom: 10,
+  overflow: "hidden",
+  alignSelf: "center",
+},
   question: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -137,24 +169,18 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#fff", // texto branco
+    color: "#fff",
     flex: 1,
     paddingRight: 10,
   },
   answerContainer: {
-    backgroundColor: "#fff", // mesma cor do card
+    backgroundColor: "#9fd1b7",
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
   answer: {
-    color: "#9fd1b7", // texto branco
+    color: "#fff",
     fontSize: 14,
     lineHeight: 20,
-  },
-  footer: {
-    marginTop: 25,
-    textAlign: "center",
-    color: "#fff",
-    fontWeight: "600",
   },
 });
