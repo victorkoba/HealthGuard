@@ -7,43 +7,70 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { Ionicons } from '@expo/vector-icons'; // Biblioteca de ícones
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function RedefinirSenha({ navigation }) {
+export default function RedefinirSenha({
+  navigation,
+}) {
   const [senha, setSenha] = useState("");
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
     <View style={styles.container}>
-      <Image style={styles.logo} source={require('../assets/logo.png')} />
+      <View style={styles.setaContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={32}
+            color="#305F49"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <Image
+        style={styles.logo}
+        source={require("../assets/logo.png")}
+      />
 
       <View style={styles.loginCard}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons style={styles.iconSeta} name="arrow-back" size={32} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.titleHeader}>Redefinir senha</Text>
+        <Text style={styles.titleHeader}>
+          Redefinir senha
+        </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#fff"
-          value={senha}
-          onChangeText={setSenha}
-        />
-
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite seu email"
+            placeholderTextColor="#fff"
+            value={senha}
+            onChangeText={setSenha}
+          />
+        </View>
         <View style={styles.contentText}>
           <Text style={styles.info}>
-            Insira seu e-mail para receber um código para redefinir sua senha.
+            Insira seu e-mail para receber um
+            código para redefinir sua senha.
           </Text>
         </View>
 
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={() => navigation.navigate('InserirCodigo')}
-        >          
-          <Text style={styles.buttonText}>Enviar Código</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            navigation.navigate("InserirCodigo")
+          }
+        >
+          <Text style={styles.buttonText}>
+            Confirmar
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
+    </SafeAreaView>
   );
 }
 
@@ -53,60 +80,74 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   logo: {
-    height: 350,
-    width: 350,
+    height: 280,
+    width: 280,
     resizeMode: "contain",
   },
   loginCard: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#679880",
+    backgroundColor: "#305F49",
     borderTopLeftRadius: 120,
     alignItems: "center",
-    paddingTop: 20,
-    paddingHorizontal: 20,
   },
-  iconSeta: {
-    marginLeft: -150,
-    marginTop: 20,
+  setaContainer: {
+    marginTop: 10,
+    marginLeft: 15,
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  label: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
   },
   titleHeader: {
-    width: '100%',
-    marginLeft: 80,
-    marginBottom: 20,
     fontSize: 40,
     fontWeight: "bold",
     color: "#fff",
     fontFamily: "Roboto-Bold",
-    marginRight: 40,
-    marginTop: 15,
+    textAlign: "center",
+    marginTop: 40,
+    marginBottom: 20,
+  },
+    inputGroup: {
+    width: "80%",
+    marginVertical: 10,
+    alignItems: "flex-start",
   },
   input: {
-    width: "100%",
-    backgroundColor: "#9FD1B7",
+    width: '100%',
+    backgroundColor: "rgba(159, 209, 183, 0.69)",
     borderRadius: 8,
-    padding: 14,
+    padding: 10,
+    height: 50,
     fontSize: 16,
     color: "#fff",
     fontFamily: "Roboto-Bold",
   },
   contentText: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: '80%',
+    justifyContent: "center",
+    alignItems: "center",
   },
   info: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   button: {
-    width: "80%",
-    backgroundColor: "#305F49",
+    width: "60%",
+    backgroundColor: "#9FD1B7",
     borderRadius: 8,
     padding: 15,
+    height: 60,
     alignItems: "center",
     marginTop: 50,
     elevation: 3,

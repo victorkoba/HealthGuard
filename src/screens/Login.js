@@ -7,32 +7,43 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert
+  Alert,
 } from "react-native";
-import { useFonts } from 'expo-font';
+import { useFonts } from "expo-font";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function LoginScreen({navigation}) {
-const [email, setEmail] = useState("");
-const [senha, setSenha] = useState("");
+export default function LoginScreen({
+  navigation,
+}) {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
 
-const handleLogin = () => {
-  if (email === "123" && senha === "123") {
-    navigation.navigate("App");
-  } else {
-    Alert.alert("Erro", "Email ou senha incorretos");
-  }
-};
+  const handleLogin = () => {
+    if (email === "123" && senha === "123") {
+      navigation.navigate("App");
+    } else {
+      Alert.alert(
+        "Erro",
+        "Email ou senha incorretos"
+      );
+    }
+  };
 
   // const [email, setEmail] = useState("");
   // const [senha, setSenha] = useState("");
   // const [loading, setLoading] = useState(false);
 
   const [fontsLoaded] = useFonts({
-    'Roboto-Bold': require('../../assets/fonts/KantumruyPro-VariableFont_wght.ttf'),
+    "Roboto-Bold": require("../../assets/fonts/KantumruyPro-VariableFont_wght.ttf"),
   });
 
   if (!fontsLoaded) {
-    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+    return (
+      <ActivityIndicator
+        size="large"
+        style={{ flex: 1 }}
+      />
+    );
   }
 
   // const handleLogin = async () => {
@@ -59,38 +70,63 @@ const handleLogin = () => {
   // };
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
     <View style={styles.container}>
-      <Image style={styles.logo} source={require('../assets/logo.png')} />
+      <Image
+        style={styles.logo}
+        source={require("../assets/logo.png")}
+      />
 
       <View style={styles.loginCard}>
-        <Text style={styles.title}>Entre na sua{"\n"}conta</Text>
+        <Text style={styles.title}>
+          Entre na sua{"\n"}conta
+        </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#fff"
-          value={email}
-          onChangeText={setEmail}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite seu email"
+            placeholderTextColor="#fff"
+            value={email}
+            onChangeText={setEmail}
+          />
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#fff"
-          secureTextEntry
-          value={senha}
-          onChangeText={setSenha}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Senha</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite sua senha"
+            placeholderTextColor="#fff"
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry
+          />
+        </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+        >
+          <Text style={styles.buttonText}>
+            Login
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('RedefinirSenha')}>
-          <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("RedefinirSenha")
+          }
+        >
+          <Text style={styles.forgotPassword}>
+            Esqueceu a senha?
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
+    </SafeAreaView>
   );
 }
 
@@ -102,14 +138,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    height: 350,
-    width: 350,
+    height: 280,
+    width: 280,
     resizeMode: "contain",
   },
   loginCard: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#679880",
+    height: "100%",
+    backgroundColor: "#305F49",
     borderTopLeftRadius: 120,
     alignItems: "center",
     paddingTop: 40,
@@ -122,33 +159,47 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     fontFamily: "Roboto-Bold",
   },
-  input: {
+  inputGroup: {
     width: "80%",
-    backgroundColor: "#9FD1B7",
-    borderRadius: 8,
-    padding: 14,
     marginVertical: 10,
+    alignItems: "flex-start",
+  },
+  label: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  input: {
+    width: '100%',
+    backgroundColor: "rgba(159, 209, 183, 0.69)",
+    borderRadius: 8,
+    height: 50,
+    padding: 10,
     fontSize: 16,
     color: "#fff",
     fontFamily: "Roboto-Bold",
   },
+
   button: {
-    width: "80%",
-    backgroundColor: "#305F49",
+    width: "60%",
+    backgroundColor: "#9FD1B7",
     borderRadius: 8,
     padding: 15,
+    height: 60,
     alignItems: "center",
     marginTop: 20,
     elevation: 3,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     fontFamily: "Roboto-Bold",
   },
   forgotPassword: {
     marginTop: 15,
+    marginBottom: 10,
     color: "#fff",
     fontSize: 16,
     textDecorationLine: "underline",

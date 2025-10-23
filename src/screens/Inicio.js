@@ -5,11 +5,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { useFonts } from "expo-font";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen({navigation}) {
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
+    <ScrollView>
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image
@@ -104,6 +108,8 @@ export default function HomeScreen({navigation}) {
         </TouchableOpacity>
       </View>
     </View>
+    </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -115,15 +121,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: {
-    height: 350,
-    width: 350,
-    marginBottom: -80,
-    marginTop: -80,
+    height: 280,
+    width: 280,
+    resizeMode: "contain",
   },
   content: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#679880",
+    backgroundColor: "#305F49",
     borderTopLeftRadius: 120,
     alignItems: "center",
     paddingTop: 40,

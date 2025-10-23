@@ -60,7 +60,7 @@ export function DrawerNavigator() {
         drawerActiveTintColor: "#fff",
         drawerInactiveTintColor: "#fff",
         drawerStyle: {
-          backgroundColor: "#679880",
+          backgroundColor: "#305F49",
           width: 320,
           borderTopRightRadius: 20,
           borderBottomRightRadius: 20,

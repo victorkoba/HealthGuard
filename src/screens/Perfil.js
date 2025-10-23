@@ -6,86 +6,134 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Alert
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function PerfilScreen({ navigation }) {
-  const [email, setEmail] = useState("victorkoba08@gmail.com");
+export default function PerfilScreen({
+  navigation,
+}) {
+  const [email, setEmail] = useState(
+    "victorkoba08@gmail.com"
+  );
   const [novaSenha, setNovaSenha] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] =
+    useState("");
 
   const handleConfirmar = () => {
     if (!novaSenha || !confirmarSenha) {
-      Alert.alert("Erro", "Preencha todos os campos de senha.");
+      Alert.alert(
+        "Erro",
+        "Preencha todos os campos de senha."
+      );
       return;
     }
     if (novaSenha !== confirmarSenha) {
-      Alert.alert("Erro", "As senhas não coincidem.");
+      Alert.alert(
+        "Erro",
+        "As senhas não coincidem."
+      );
       return;
     }
-    Alert.alert("Sucesso", "Senha alterada com sucesso!");
+    Alert.alert(
+      "Sucesso",
+      "Senha alterada com sucesso!"
+    );
     setNovaSenha("");
     setConfirmarSenha("");
   };
 
   const handleSair = () => {
-      navigation.navigate("Login")
+    navigation.navigate("Login");
   };
 
   return (
-    <View style={styles.container}>
-<View style={styles.logoContainer}>
-              <TouchableOpacity style={styles.drawer} onPress={() => navigation.openDrawer()}>
-                <Ionicons name="menu" size={32} color="#305F49" />
-              </TouchableOpacity>
-              <Image
-                style={styles.logo}
-                source={require("../assets/logo.png")}
-              />
-      </View>
-      <View style={styles.content}>
-        <View style={styles.contentEdit}>
-          <Ionicons name="person-outline" size={150} color="#fff" />
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#305F49",
+      }}
+    >
+      <View style={styles.container}>
+        <View style={styles.logoContainer}>
+          <TouchableOpacity
+            style={styles.drawer}
+            onPress={() =>
+              navigation.openDrawer()
+            }
+          >
+            <Ionicons
+              name="menu"
+              size={50}
+              color="#305F49"
+            />
+          </TouchableOpacity>
+          <Image
+            style={styles.logo}
+            source={require("../assets/logo.png")}
+          />
         </View>
-        <Text style={styles.nome}>Victor Koba</Text>
-      
+        <View style={styles.content}>
+          <View style={styles.contentEdit}>
+            <Ionicons
+              name="person-outline"
+              size={150}
+              color="#fff"
+            />
+          </View>
+          <Text style={styles.nome}>
+            Victor Koba
+          </Text>
 
-      <TextInput
-        style={styles.inputEmail}
-        placeholder="Email"
-        placeholderTextColor="#ffffffc7"
-        editable={false}
-        value={email}
-      />
+          <TextInput
+            style={styles.inputEmail}
+            placeholder="Email"
+            placeholderTextColor="#ffffffc7"
+            editable={false}
+            value={email}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Alterar Senha"
-        placeholderTextColor="#fff"
-        secureTextEntry
-        value={novaSenha}
-        onChangeText={setNovaSenha}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Alterar Senha"
+            placeholderTextColor="#fff"
+            secureTextEntry
+            value={novaSenha}
+            onChangeText={setNovaSenha}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmar Senha"
-        placeholderTextColor="#fff"
-        secureTextEntry
-        value={confirmarSenha}
-        onChangeText={setConfirmarSenha}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirmar Senha"
+            placeholderTextColor="#fff"
+            secureTextEntry
+            value={confirmarSenha}
+            onChangeText={setConfirmarSenha}
+          />
 
-      <TouchableOpacity style={styles.btnConfirmar} onPress={handleConfirmar}>
-        <Text style={styles.textoBtnConfirmar}>Confirmar</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.btnConfirmar}
+            onPress={handleConfirmar}
+          >
+            <Text
+              style={styles.textoBtnConfirmar}
+            >
+              Confirmar
+            </Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={styles.btnSair} onPress={handleSair}>
-        <Text style={styles.textoBtnSair}>Sair</Text>
-      </TouchableOpacity>
-    </View>
-    </View>
+          <TouchableOpacity
+            style={styles.btnSair}
+            onPress={handleSair}
+          >
+            <Text style={styles.textoBtnSair}>
+              Sair
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -96,36 +144,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
   },
-    logo: {
-    height: 350,
-    width: 350,
+  logo: {
+    width: 280,
+    resizeMode: "contain",
+    marginTop: -60,
+  },
+  drawer: {
+    marginTop: -60,
+    marginRight: 20,
   },
   logoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: 'center',
-    marginBottom: -120,
-    marginTop: -180,
-    paddingLeft: 40,
-    paddingRight: 20,
+    alignItems: "center",
   },
   content: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#679880",
+    backgroundColor: "#305F49",
     borderTopLeftRadius: 80,
     alignItems: "center",
     paddingTop: 40,
   },
 
   contentEdit: {
-  backgroundColor: "#9fd1b781",
-  borderRadius: 200,
-  width: 200,
-  height: 200,
-  justifyContent: "center",
-  alignItems: "center",
-},
+    backgroundColor: "#679880",
+    borderRadius: 200,
+    width: 200,
+    height: 200,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
   nome: {
     color: "#fff",
@@ -135,25 +184,28 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    backgroundColor: "#9FD1B7",
+    backgroundColor: "rgba(159, 209, 183, 0.69)",
     width: "80%",
     borderRadius: 8,
+    height: 50,
     padding: 10,
-    marginBottom: 15,
+    marginBottom: 30,
     color: "#fff",
   },
   inputEmail: {
-    backgroundColor: "#9fd1b781",
+    backgroundColor: "rgba(159, 209, 183, 1)",
     width: "80%",
     borderRadius: 8,
+    height: 50,
     padding: 10,
-    marginBottom: 15,
+    marginBottom: 30,
     color: "#ffffff86",
   },
   btnConfirmar: {
-    backgroundColor: "#305F49",
-    padding: 12,
-    width: "70%",
+    backgroundColor: "#9FD1B7",
+    padding: 10,
+    width: 250,
+    height: 50,
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
@@ -164,10 +216,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   btnSair: {
-    backgroundColor: "red",
-    padding: 12,
-    width: "70%",
+    backgroundColor: "#305F49",
+    padding: 10,
+    width: 170,
     borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#679880",
     alignItems: "center",
     marginTop: 15,
   },
