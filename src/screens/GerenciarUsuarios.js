@@ -103,7 +103,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
                         />
 
                         <TextInput
-                          style={styles.input}
+                          style={styles.inputEmail}
                           value={email}
                           editable={false}
                           keyboardType="email-address"
@@ -114,6 +114,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
                           value={senhaNova}
                           onChangeText={setSenhaNova}
                           placeholder="Nova senha"
+                          placeholderTextColor={'#ffffff85'}
                           secureTextEntry
                         />
 
@@ -122,6 +123,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
                           value={senhaConfirmar}
                           onChangeText={setSenhaConfirmar}
                           placeholder="Confirmar nova senha"
+                          placeholderTextColor={'#ffffff85'}
                           secureTextEntry
                         />
 
@@ -130,7 +132,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
                             style={styles.cancelBtn}
                             onPress={() => setModalVisible(false)}
                           >
-                            <Text style={styles.btnText}>Cancelar</Text>
+                            <Text style={styles.btnTextCancel}>Cancelar</Text>
                           </TouchableOpacity>
 
                           <TouchableOpacity
@@ -308,27 +310,37 @@ const styles = StyleSheet.create({
   },
   modalBox: {
     width: "80%",
-    backgroundColor: "#fff",
+    backgroundColor: "#305F49",
     padding: 20,
     borderRadius: 12
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
+    color: "#FFFFFF",
+    textAlign: "center",
     fontWeight: "bold",
-    marginBottom: 15
+    marginBottom: 20,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#fff",
     color: '#888',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10
+  },
+  inputEmail: {
+    borderWidth: 1,
+    borderColor: "#888888be",
+    color: '#888888be',
     borderRadius: 8,
     padding: 10,
     marginBottom: 10
   },
   inputNome: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    color: '#000',
+    borderColor: "#fff",
+    color: '#fff',
     borderRadius: 8,
     padding: 10,
     marginBottom: 10
@@ -338,15 +350,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   cancelBtn: {
-    backgroundColor: "#888",
+    backgroundColor: "#fff",
     padding: 12,
     borderRadius: 8,
     flex: 1,
     marginRight: 10,
-    alignItems: "center"
+    alignItems: "center",
   },
   saveBtn: {
-    backgroundColor: "#305F49",
+    backgroundColor: "#9FD1B7",
     padding: 12,
     borderRadius: 8,
     flex: 1,
@@ -354,6 +366,10 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: "#fff",
-    fontWeight: "bold"
+    fontWeight: "bold",
+  },
+  btnTextCancel: {
+    color: '#305F49',
+    fontWeight: "bold",
   }
 });

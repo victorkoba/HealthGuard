@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,130 +7,139 @@ import {
   Image,
   ScrollView
 } from "react-native";
-import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Calendar } from "react-native-calendars";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function GerenciarTemperaturaScreen({ navigation }) {
+  const [selectedDates, setSelectedDates] = useState({});
+
+  const today = new Date().toISOString().split("T")[0];
   return (
     <SafeAreaView
-          style={{
-            flex: 1,
-            backgroundColor: "#305F49",
-          }}
-        >
-    <ScrollView showsVerticalScrollIndicator={false}>
+      style={{
+        flex: 1,
+        backgroundColor: "#305F49",
+      }}
+    >
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
-      <View style={styles.logoContainer}>
-                  <TouchableOpacity
-                    style={styles.drawer}
-                    onPress={() =>
-                      navigation.openDrawer()
-                    }
-                  >
-                    <Ionicons
-                      name="menu"
-                      size={50}
-                      color="#305F49"
-                    />
-                  </TouchableOpacity>
-                  <Image
-                    style={styles.logo}
-                    source={require("../assets/logo.png")}
-                  />
-                </View>
-      
-
-      <View style={styles.content}>
-        <View style={styles.card}>
-          <Text style={styles.textSmall}>
-            Você está visualizando a temperatura do freezer 2
-          </Text>
-          <View style={styles.freezerInfo}>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Mudar freezer</Text>
-            </TouchableOpacity>
-            <View style={styles.freezerLogo}>
-              <Image
-                style={styles.iconFreezer}
-                source={require("../assets/icon-freezer.png")}
+          <View style={styles.logoContainer}>
+            <TouchableOpacity
+              style={styles.drawer}
+              onPress={() =>
+                navigation.openDrawer()
+              }
+            >
+              <Ionicons
+                name="menu"
+                size={50}
+                color="#305F49"
               />
-              <Text style={styles.freezerLabel}>Freezer 2</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.chartContainer}>
-          <View style={styles.tittleChart}>
+            </TouchableOpacity>
             <Image
-              style={styles.chartIcon}
-              source={require("../assets/icon-time.png")}
+              style={styles.logo}
+              source={require("../assets/logo.png")}
             />
-            <Text style={styles.chartTitle}>
-              Registro de temperatura durante a semana
-            </Text>
           </View>
-          <LineChart
-            data={{
-              labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
-              datasets: [
-                { data: [12, 8, 11, 14, 10, 9, 9], color: () => "#244C38" },
-                { data: [8, 6, 7, 10, 9, 8, 8], color: () => "#ffffffbe" },
-              ],
-            }}
-            width={screenWidth * 0.9}
-            height={220}
-            formatYLabel={(value) => `${parseInt(value)}°C`}
-            chartConfig={{
-              backgroundGradientFrom: "#679880",
-              backgroundGradientTo: "#679880",
-              color: () => "#244C38",
-              labelColor: () => "#fff",
-              propsForBackgroundLines: {
-                stroke: "transparent",
+
+
+          <View style={styles.content}>
+            <View style={styles.card}>
+              <Text style={styles.textSmall}>
+                Você está visualizando a temperatura do freezer 2
+              </Text>
+              <View style={styles.freezerInfo}>
+                <TouchableOpacity style={styles.button}>
+                  <Text style={styles.buttonText}>Mudar freezer</Text>
+                </TouchableOpacity>
+                <View style={styles.freezerLogo}>
+                  <Image
+                    style={styles.iconFreezer}
+                    source={require("../assets/icon-freezer.png")}
+                  />
+                  <Text style={styles.freezerLabel}>Freezer 2</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.downloadBox}>
+              <Text style={styles.downloadTitle}>
+                Selecione o período para recuperar os dados de temperatura
+              </Text>
+              <TouchableOpacity style={styles.downloadButton}>
+                <Text style={styles.downloadText}>Abaixar dados do dia de hoje</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.downloadButton}>
+                <Text style={styles.downloadText}>Abaixar dados dos últimos 7 dias</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.downloadButton}>
+                <Text style={styles.downloadText}>
+                  Abaixar dados dos últimos 30 dias
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+      <View>
+      <Calendar
+        current={today}
+        markingType={"period"}
+        markedDates={selectedDates}
+        onDayPress={(day) => {
+          const start = Object.keys(selectedDates)[0];
+
+          if (!start || start && Object.keys(selectedDates).length > 1) {
+            setSelectedDates({
+              [day.dateString]: {
+                startingDay: true,
+                endingDay: true,
+                color: "#9FD1B7",
+                textColor: "white",
               },
-            }}
-            bezier
-            style={{ borderRadius: 12 }}
-          />
+            });
+          } else {
+            // Cria intervalo
+            const end = day.dateString;
+            const range = getDateRange(start, end);
 
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <View style={[styles.colorBox, { backgroundColor: "#244C38" }]} />
-              <Text style={styles.legendText}>Temperatura máxima</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.colorBox, { backgroundColor: "#ffffffff" }]} />
-              <Text style={styles.legendText}>Temperatura mínima</Text>
-            </View>
-          </View>
+            const obj = {};
+            range.forEach((date, index) => {
+              obj[date] = {
+                color: "#9FD1B7",
+                textColor: "white",
+                startingDay: index === 0,
+                endingDay: index === range.length - 1,
+              };
+            });
 
+            setSelectedDates(obj);
+          }
+        }}
+        maxDate={today}
+
+        theme={{
+          todayTextColor: "#244C38",
+          selectedDayBackgroundColor: "#244C38",
+        }}
+      />
+    </View>
         </View>
-
-        <View style={styles.downloadBox}>
-          <Text style={styles.downloadTitle}>
-            Selecione o período para recuperar os dados de temperatura
-          </Text>
-          <TouchableOpacity style={styles.downloadButton}>
-            <Text style={styles.downloadText}>Abaixar dados do dia de hoje</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.downloadButton}>
-            <Text style={styles.downloadText}>Abaixar dados dos últimos 7 dias</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.downloadButton}>
-            <Text style={styles.downloadText}>
-              Abaixar dados dos últimos 30 dias
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </SafeAreaView>
   );
+}
+function getDateRange(start, end) {
+  const range = [];
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  while (startDate <= endDate) {
+    range.push(startDate.toISOString().split("T")[0]);
+    startDate.setDate(startDate.getDate() + 1);
+  }
+  return range;
 }
 
 const styles = StyleSheet.create({
@@ -139,27 +148,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     paddingTop: 60,
-  },
-    legendContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: screenWidth * 0.9,
-    marginTop: 12,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  colorBox: {
-    width: 12,
-    height: 12,
-    marginRight: 6,
-    borderRadius: 2,
-  },
-  legendText: {
-    fontSize: 14,
-    color: "#fff",
-    fontWeight:'600',
   },
   logo: {
     width: 280,
@@ -247,41 +235,11 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginTop: 25,
     backgroundColor: "rgba(255,255,255, 0.5)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  chartContainer: {
-    backgroundColor: "#679880",
-    borderRadius: 12,
-    padding: 10,
-    alignItems: "center",
-    width: "90%",
-    marginBottom: 25,
-  },
-  chartTitle: {
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
-    fontSize: 15,
-  },
-  tittleChart: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  chartIcon: {
-    backgroundColor: "rgba(255,255,255, 0.2)",
-    borderRadius: 20,
-    height: 20,
-    width: 20,
-    marginRight: 5,
   },
   downloadBox: {
     backgroundColor: "#679880",
@@ -295,25 +253,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     marginBottom: 20,
+    fontSize: 16,
     textAlign: "center",
   },
   downloadButton: {
-    height: 35,
+    height: 45,
     width: '80%',
-    borderRadius: 20,
+    borderRadius: 10,
     marginBottom: 10,
     alignItems: "center",
     justifyContent: 'center',
     backgroundColor: "rgba(255,255,255, 0.5)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
   },
   downloadText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
 });
