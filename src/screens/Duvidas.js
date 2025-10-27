@@ -11,13 +11,13 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-// Ativar animação no Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function Duvidas({navigation}) {
+export default function Duvidas({ navigation }) {
   const [expanded, setExpanded] = useState(null);
 
   const toggleExpand = (index) => {
@@ -66,53 +66,67 @@ export default function Duvidas({navigation}) {
   ];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-                    <TouchableOpacity style={styles.drawer} onPress={() => navigation.openDrawer()}>
-                      <Ionicons name="menu" size={32} color="#305F49" />
-                    </TouchableOpacity>
-                    <Image
-                      style={styles.logo}
-                      source={require("../assets/logo.png")}
-                    />
-            </View>
-      <View style={styles.content}>
-        {/* Cabeçalho curvado */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Dúvidas frequentes</Text>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#305F49",
+      }}
+    >
+      <View style={styles.container}>
+        <View style={styles.logoContainer}>
+          <TouchableOpacity
+            style={styles.drawer}
+            onPress={() =>
+              navigation.openDrawer()
+            }
+          >
+            <Ionicons
+              name="menu"
+              size={50}
+              color="#305F49"
+            />
+          </TouchableOpacity>
+          <Image
+            style={styles.logo}
+            source={require("../assets/logo.png")}
+          />
         </View>
+        <View style={styles.content}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Dúvidas frequentes</Text>
+          </View>
 
-        {/* Lista de perguntas rolável */}
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {perguntas.map((item, index) => (
-            <View key={index} style={styles.card}>
-              <TouchableOpacity
-                style={styles.question}
-                onPress={() => toggleExpand(index)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.questionText}>{item.pergunta}</Text>
-                <Ionicons
-                  name={expanded === index ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color="#fff"
-                />
-              </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {perguntas.map((item, index) => (
+              <View key={index} style={styles.card}>
+                <TouchableOpacity
+                  style={styles.question}
+                  onPress={() => toggleExpand(index)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.questionText}>{item.pergunta}</Text>
+                  <Ionicons
+                    name={expanded === index ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color="#fff"
+                  />
+                </TouchableOpacity>
 
-              {expanded === index && (
-                <View style={styles.answerContainer}>
-                  <Text style={styles.answer}>{item.resposta}</Text>
-                </View>
-              )}
-            </View>
-          ))}
+                {expanded === index && (
+                  <View style={styles.answerContainer}>
+                    <Text style={styles.answer}>{item.resposta}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
 
-        </ScrollView>
+          </ScrollView>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -123,23 +137,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
   },
-    logo: {
-    height: 350,
-    width: 350,
+  logo: {
+    width: 280,
+    resizeMode: "contain",
+    marginTop: -60,
+  },
+  drawer: {
+    marginTop: -60,
+    marginRight: 20,
   },
   logoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: 'center',
-    marginBottom: -120,
-    marginTop: -180,
-    paddingLeft: 40,
-    paddingRight: 20,
+    alignItems: "center",
   },
   content: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#679880",
+    backgroundColor: "#305F49",
     borderTopLeftRadius: 80,
     alignItems: "center",
     paddingTop: 40,
@@ -152,14 +167,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
-card: {
-  width: "90%",
-  backgroundColor: "#9fd1b7",
-  borderRadius: 10,
-  marginBottom: 10,
-  overflow: "hidden",
-  alignSelf: "center",
-},
+  card: {
+    width: 350,
+    backgroundColor: "#679880",
+    borderRadius: 10,
+    marginBottom: 10,
+    overflow: "hidden",
+    alignSelf: "center",
+  },
   question: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -174,7 +189,7 @@ card: {
     paddingRight: 10,
   },
   answerContainer: {
-    backgroundColor: "#9fd1b7",
+    backgroundColor: "#679880",
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
@@ -182,5 +197,6 @@ card: {
     color: "#fff",
     fontSize: 14,
     lineHeight: 20,
+    textAlign: 'justify',
   },
 });

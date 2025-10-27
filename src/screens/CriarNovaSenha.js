@@ -67,7 +67,7 @@ export default function RedefinirSenha({
         <TouchableOpacity
           style={styles.button}
           onPress={() =>
-            navigation.navigate("CriarNovaSenha")
+            navigation.navigate("Login")
           }
         >
           <Text style={styles.buttonText}>

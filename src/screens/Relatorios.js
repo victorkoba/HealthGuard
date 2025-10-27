@@ -5,27 +5,44 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ScrollView,
+  ScrollView
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function GerenciarTemperaturaScreen({ navigation }) {
   return (
-    <ScrollView contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}>
+    <SafeAreaView
+          style={{
+            flex: 1,
+            backgroundColor: "#305F49",
+          }}
+        >
+    <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <TouchableOpacity style={styles.drawer} onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu" size={32} color="#305F49" />
-        </TouchableOpacity>
-        <Image
-          style={styles.logo}
-          source={require("../assets/logo.png")}
-        />
-      </View>
+                  <TouchableOpacity
+                    style={styles.drawer}
+                    onPress={() =>
+                      navigation.openDrawer()
+                    }
+                  >
+                    <Ionicons
+                      name="menu"
+                      size={50}
+                      color="#305F49"
+                    />
+                  </TouchableOpacity>
+                  <Image
+                    style={styles.logo}
+                    source={require("../assets/logo.png")}
+                  />
+                </View>
+      
 
       <View style={styles.content}>
         <View style={styles.card}>
@@ -68,8 +85,8 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
             height={220}
             formatYLabel={(value) => `${parseInt(value)}°C`}
             chartConfig={{
-              backgroundGradientFrom: "#89BBA1",
-              backgroundGradientTo: "#89BBA1",
+              backgroundGradientFrom: "#679880",
+              backgroundGradientTo: "#679880",
               color: () => "#244C38",
               labelColor: () => "#fff",
               propsForBackgroundLines: {
@@ -110,7 +127,9 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
+      </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -143,27 +162,28 @@ const styles = StyleSheet.create({
     fontWeight:'600',
   },
   logo: {
-    height: 350,
-    width: 350,
+    width: 280,
+    resizeMode: "contain",
+    marginTop: -60,
+  },
+  drawer: {
+    marginTop: -60,
+    marginRight: 20,
   },
   logoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: 'center',
-    marginBottom: -120,
-    marginTop: -180,
-    paddingLeft: 40,
-    paddingRight: 20,
+    alignItems: "center",
   },
   content: {
     width: "100%",
-    backgroundColor: "#679880",
+    backgroundColor: "#305F49",
     borderTopLeftRadius: 80,
     alignItems: "center",
     paddingTop: 40,
   },
   card: {
-    backgroundColor: "#89BBA1",
+    backgroundColor: "#679880",
     width: 350,
     height: 150,
     borderRadius: 10,
@@ -239,7 +259,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   chartContainer: {
-    backgroundColor: "#89BBA1",
+    backgroundColor: "#679880",
     borderRadius: 12,
     padding: 10,
     alignItems: "center",
@@ -264,7 +284,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   downloadBox: {
-    backgroundColor: "#89BBA1",
+    backgroundColor: "#679880",
     borderRadius: 12,
     width: "90%",
     padding: 15,
