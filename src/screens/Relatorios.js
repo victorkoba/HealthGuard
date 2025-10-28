@@ -146,17 +146,17 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
             </View>
             <View style={styles.downloadBox}>
               <Text style={styles.downloadTitle}>
-                Selecione o período para recuperar os dados de temperatura
+                Escolha o período para recuperar os dados de temperatura
               </Text>
               <TouchableOpacity style={styles.downloadButton}>
-                <Text style={styles.downloadText}>Abaixar dados de hoje</Text>
+                <Text style={styles.downloadText}>Baixar dados de hoje</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.downloadButton}>
-                <Text style={styles.downloadText}>Abaixar dados dos últimos 7 dias</Text>
+                <Text style={styles.downloadText}>Baixar dados dos últimos 7 dias</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.downloadButton}>
                 <Text style={styles.downloadText}>
-                  Abaixar dados dos últimos 30 dias
+                  Baixar dados dos últimos 30 dias
                 </Text>
               </TouchableOpacity>
             </View>
@@ -205,7 +205,7 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                 onPress={() => {
                   Alert.alert(
                     "Confirmação",
-                    "Deseja realmente abaixar os dados de temperatura dos dias selecionados?",
+                    "Deseja realmente baixar os dados de temperatura dos dias selecionados?",
                     [
                       {
                         text: "Cancelar",
@@ -220,7 +220,7 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                 }}
               >
                 <Text style={styles.calendarText}>
-                  Escolha uma data ou período para consultar a temperatura
+                  Baixar período selecionado
                 </Text>
               </TouchableOpacity>
             </View>
