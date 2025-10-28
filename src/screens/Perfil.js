@@ -44,10 +44,6 @@ export default function PerfilScreen({
     setConfirmarSenha("");
   };
 
-  const handleSair = () => {
-    navigation.navigate("Login");
-  };
-
   return (
     <SafeAreaView
       style={{
@@ -125,7 +121,25 @@ export default function PerfilScreen({
 
           <TouchableOpacity
             style={styles.btnSair}
-            onPress={handleSair}
+            onPress={() => {
+              Alert.alert(
+                "Confirmação",
+                "Deseja realmente sair da sua conta?",
+                [
+                  {
+                    text: "Cancelar",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Confirmar",
+                    onPress: () => {
+                      navigation.navigate('Login');
+                    },
+                  },
+                ],
+                { cancelable: false }
+              );
+            }}
           >
             <Text style={styles.textoBtnSair}>
               Sair
