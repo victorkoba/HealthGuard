@@ -19,7 +19,7 @@ export default function LoginScreen({
   const [senha, setSenha] = useState("");
 
   const handleLogin = () => {
-    if (email === "123" && senha === "123") {
+    if (email === "victorkoba08@gmail.com" && senha === "123456") {
       navigation.navigate("App");
     } else {
       Alert.alert(
