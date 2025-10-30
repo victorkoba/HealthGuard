@@ -7,14 +7,46 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
-  Alert
+  Alert,
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Modal from "react-native-modal";
 
-export default function GerenciarUsuariosScreen({ navigation }) {
-  const [isModalVisible, setModalVisible] = useState(false);
+export default function GerenciarUsuariosScreen({
+  navigation,
+}) {
+  const [isAddModalVisible, setAddModalVisible] =
+    useState(false);
+  const [isModalVisible, setModalVisible] =
+    useState(false);
+  const [editModalVisible, setEditModalVisible] =
+    useState(false);
+  const [
+    usuarioSelecionadoIndex,
+    setUsuarioSelecionadoIndex,
+  ] = useState(null);
+
+  const [email, setEmail] = useState(
+    "email@exemplo.com"
+  );
+  const [senhaNova, setSenhaNova] = useState("");
+  const [senhaConfirmar, setSenhaConfirmar] =
+    useState("");
+  const [nome, setNome] = useState("");
+
+  // Estados do modal de criação
+  const [novoNome, setNovoNome] = useState("");
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [
+    novaSenhaConfirmar,
+    setNovaSenhaConfirmar,
+  ] = useState("");
+
   const usuarios = [
     "Jacquys Barbosa",
     "Miguel Sales",
@@ -25,12 +57,6 @@ export default function GerenciarUsuariosScreen({ navigation }) {
     "André Batista",
     "Adriana Koba",
   ];
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [usuarioSelecionadoIndex, setUsuarioSelecionadoIndex] = useState(null);
-  const [email] = useState("email@exemplo.com");
-  const [senhaNova, setSenhaNova] = useState();
-  const [senhaConfirmar, setSenhaConfirmar] = useState();
-  const [nome, setNome] = useState("");
 
   return (
     <SafeAreaView
@@ -39,7 +65,9 @@ export default function GerenciarUsuariosScreen({ navigation }) {
         backgroundColor: "#305F49",
       }}
     >
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <TouchableOpacity
@@ -62,137 +90,103 @@ export default function GerenciarUsuariosScreen({ navigation }) {
 
           <View style={styles.content}>
             <View style={styles.titleContainer}>
-              <Text style={styles.title}>Gerenciar usuários</Text>
+              <Text style={styles.title}>
+                Gerenciar usuários
+              </Text>
             </View>
 
+            <TouchableOpacity
+              onPress={() =>
+                setAddModalVisible(true)
+              }
+              style={styles.userCardAdd}
+            >
+              <View style={styles.userInfoAdd}>
+                <View
+                  style={styles.contentIconAdd}
+                >
+                  <Ionicons
+                    name="add-outline"
+                    size={40}
+                    color="#305F49"
+                  />
+                </View>
+                <Text style={styles.userNameAdd}>
+                  Criar novo usuário
+                </Text>
+              </View>
+            </TouchableOpacity>
+
             {usuarios.map((usuario, index) => (
-              <View key={index} style={styles.userCard}>
+              <View
+                key={index}
+                style={styles.userCard}
+              >
                 <View style={styles.userInfo}>
-                  <View style={styles.contentIcon}>
-                    <Ionicons name="person-outline" size={40} color="#fff" />
+                  <View
+                    style={styles.contentIcon}
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={40}
+                      color="#fff"
+                    />
                   </View>
-                  <Text style={styles.userName}>{usuario}</Text>
+                  <Text style={styles.userName}>
+                    {usuario}
+                  </Text>
                 </View>
 
                 <View style={styles.actions}>
                   <TouchableOpacity
                     style={styles.editButton}
                     onPress={() => {
-                      setModalVisible(true)
-                      setUsuarioSelecionadoIndex(index);
+                      setModalVisible(true);
+                      setUsuarioSelecionadoIndex(
+                        index
+                      );
                       setNome(usuario);
                       setSenhaNova("");
                       setSenhaConfirmar("");
                       setEditModalVisible(true);
                     }}
                   >
-                    <MaterialIcons name="edit" size={20} color="#fff" />
+                    <MaterialIcons
+                      name="edit"
+                      size={20}
+                      color="#fff"
+                    />
                   </TouchableOpacity>
 
-                  <Modal isVisible={isModalVisible}
-                    backdropOpacity={0.1}
-                    onBackdropPress={() => setModalVisible(false)}>
-                    <View style={styles.modalContainer}>
-                      <View style={styles.modalBox}>
-                        <Text style={styles.modalTitle}>Editar usuário</Text>
-
-                        <TextInput
-                          style={styles.inputNome}
-                          value={nome}
-                          onChangeText={setNome}
-                        />
-
-                        <TextInput
-                          style={styles.inputEmail}
-                          value={email}
-                          editable={false}
-                          keyboardType="email-address"
-                        />
-
-                        <TextInput
-                          style={styles.input}
-                          value={senhaNova}
-                          onChangeText={setSenhaNova}
-                          placeholder="Nova senha"
-                          placeholderTextColor={'#ffffff85'}
-                          secureTextEntry
-                        />
-
-                        <TextInput
-                          style={styles.input}
-                          value={senhaConfirmar}
-                          onChangeText={setSenhaConfirmar}
-                          placeholder="Confirmar nova senha"
-                          placeholderTextColor={'#ffffff85'}
-                          secureTextEntry
-                        />
-
-                        <View style={styles.modalActions}>
-                          <TouchableOpacity
-                            style={styles.cancelBtn}
-                            onPress={() => setModalVisible(false)}
-                          >
-                            <Text style={styles.btnTextCancel}>Cancelar</Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={styles.saveBtn}
-                            onPress={() => {
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => {
+                      Alert.alert(
+                        "Excluir",
+                        "Deseja realmente excluir esse usuário?",
+                        [
+                          {
+                            text: "Cancelar",
+                          },
+                          {
+                            text: "Excluir",
+                            onPress: () => {
                               Alert.alert(
-                                "Confirmação",
-                                "Deseja realmente salvar essas alterações?",
-                                [
-                                  {
-                                    text: "Cancelar",
-                                    onPress: () => {
-                                      setModalVisible(false);
-                                    },
-                                    style: "cancel",
-                                  },
-                                  {
-                                    text: "Confirmar",
-                                    onPress: () => {
-                                      console.log("Atualizar dados:", { nome, senhaNova, senhaConfirmar });
-                                      setModalVisible(false);
-                                    },
-                                  },
-                                ],
-                                { cancelable: false }
+                                "Sucesso",
+                                "Você exclui esse usuário."
                               );
-                            }}
-                          >
-                            <Text style={styles.btnText}>Salvar</Text>
-                          </TouchableOpacity>
-                                
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-
-
-                  <TouchableOpacity style={styles.deleteButton}
-                  onPress={() => {
-                              Alert.alert(
-                                "Excluir",
-                                "Deseja realmente excluir esse usuário?",
-                                [
-                                  {
-                                    text: "Cancelar",
-                                  },
-                                  {
-                                    text: "Excluir",
-                                    onPress: () => {
-                                      Alert.alert(
-                                        "Sucesso",
-                                        'Você exclui esse usuário.');
-                                    },
-                                  },
-                                ],
-                                { cancelable: false }
-                              );
-                            }}
+                            },
+                          },
+                        ],
+                        { cancelable: false }
+                      );
+                    }}
                   >
-                    <MaterialIcons name="delete" size={20} color="#fff" />
+                    <MaterialIcons
+                      name="delete"
+                      size={20}
+                      color="#fff"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -200,6 +194,215 @@ export default function GerenciarUsuariosScreen({ navigation }) {
           </View>
         </View>
       </ScrollView>
+      <Modal
+        isVisible={isAddModalVisible}
+        style={{ margin: 0 }}
+        onBackdropPress={() =>
+          setAddModalVisible(false)
+        }
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>
+              Criar novo usuário
+            </Text>
+
+            <TextInput
+              style={styles.inputNome}
+              placeholder="Nome completo"
+              placeholderTextColor="#ffffff85"
+              value={novoNome}
+              onChangeText={setNovoNome}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#ffffff85"
+              keyboardType="email-address"
+              value={novoEmail}
+              onChangeText={setNovoEmail}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor="#ffffff85"
+              secureTextEntry
+              value={novaSenha}
+              onChangeText={setNovaSenha}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Confirmar senha"
+              placeholderTextColor="#ffffff85"
+              secureTextEntry
+              value={novaSenhaConfirmar}
+              onChangeText={setNovaSenhaConfirmar}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() =>
+                  setAddModalVisible(false)
+                }
+              >
+                <Text
+                  style={styles.btnTextCancel}
+                >
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={() => {
+                  if (
+                    !novoNome ||
+                    !novoEmail ||
+                    !novaSenha ||
+                    !novaSenhaConfirmar
+                  ) {
+                    Alert.alert(
+                      "Erro",
+                      "Preencha todos os campos."
+                    );
+                    return;
+                  }
+
+                  if (
+                    novaSenha !==
+                    novaSenhaConfirmar
+                  ) {
+                    Alert.alert(
+                      "Erro",
+                      "As senhas não coincidem."
+                    );
+                    return;
+                  }
+
+                  Alert.alert(
+                    "Sucesso",
+                    "Novo usuário criado com sucesso!"
+                  );
+                  setAddModalVisible(false);
+                  setNovoNome("");
+                  setNovoEmail("");
+                  setNovaSenha("");
+                  setNovaSenhaConfirmar("");
+                }}
+              >
+                <Text style={styles.btnText}>
+                  Salvar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        isVisible={isModalVisible}
+        style={{ margin: 0 }}
+        onBackdropPress={() =>
+          setModalVisible(false)
+        }
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>
+              Editar usuário
+            </Text>
+
+            <TextInput
+              style={styles.inputNome}
+              value={nome}
+              onChangeText={setNome}
+            />
+
+            <TextInput
+              style={styles.inputEmail}
+              value={email}
+              editable={false}
+              keyboardType="email-address"
+            />
+
+            <TextInput
+              style={styles.input}
+              value={senhaNova}
+              onChangeText={setSenhaNova}
+              placeholder="Nova senha"
+              placeholderTextColor={"#ffffff85"}
+              secureTextEntry
+            />
+
+            <TextInput
+              style={styles.input}
+              value={senhaConfirmar}
+              onChangeText={setSenhaConfirmar}
+              placeholder="Confirmar nova senha"
+              placeholderTextColor={"#ffffff85"}
+              secureTextEntry
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() =>
+                  setModalVisible(false)
+                }
+              >
+                <Text
+                  style={styles.btnTextCancel}
+                >
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={() => {
+                  Alert.alert(
+                    "Confirmação",
+                    "Deseja realmente salvar essas alterações?",
+                    [
+                      {
+                        text: "Cancelar",
+                        onPress: () => {
+                          setModalVisible(false);
+                        },
+                        style: "cancel",
+                      },
+                      {
+                        text: "Confirmar",
+                        onPress: () => {
+                          console.log(
+                            "Atualizar dados:",
+                            {
+                              nome,
+                              senhaNova,
+                              senhaConfirmar,
+                            }
+                          );
+                          setModalVisible(false);
+                        },
+                      },
+                    ],
+                    {
+                      cancelable: false,
+                    }
+                  );
+                }}
+              >
+                <Text style={styles.btnText}>
+                  Salvar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -213,7 +416,15 @@ const styles = StyleSheet.create({
   },
 
   contentIcon: {
-    backgroundColor: '#305F49',
+    backgroundColor: "#305F49",
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contentIconAdd: {
+    backgroundColor: "#fff",
     width: 60,
     height: 60,
     borderRadius: 10,
@@ -237,7 +448,7 @@ const styles = StyleSheet.create({
 
   content: {
     width: "100%",
-    height: '100%',
+    height: "100%",
     backgroundColor: "#305F49",
     borderTopLeftRadius: 80,
     alignItems: "center",
@@ -275,7 +486,27 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
+  userCardAdd: {
+    backgroundColor: "#305F49",
+    width: "90%",
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: "#fff",
+    borderStyle: "dashed",
+  },
+
   userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  userInfoAdd: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -285,6 +516,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#305F49",
+  },
+
+  userNameAdd: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
   },
 
   actions: {
@@ -307,12 +544,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
+
   modalBox: {
     width: "80%",
     backgroundColor: "#305F49",
     padding: 20,
-    borderRadius: 12
+    borderRadius: 12,
   },
   modalTitle: {
     fontSize: 20,
@@ -324,30 +563,30 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#fff",
-    color: '#888',
+    color: "#888",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10
+    marginBottom: 10,
   },
   inputEmail: {
     borderWidth: 1,
     borderColor: "#888888be",
-    color: '#888888be',
+    color: "#888888be",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10
+    marginBottom: 10,
   },
   inputNome: {
     borderWidth: 1,
     borderColor: "#fff",
-    color: '#fff',
+    color: "#fff",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10
+    marginBottom: 10,
   },
   modalActions: {
     flexDirection: "row",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   cancelBtn: {
     backgroundColor: "#fff",
@@ -362,14 +601,14 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     flex: 1,
-    alignItems: "center"
+    alignItems: "center",
   },
   btnText: {
     color: "#fff",
     fontWeight: "bold",
   },
   btnTextCancel: {
-    color: '#305F49',
+    color: "#305F49",
     fontWeight: "bold",
-  }
+  },
 });
