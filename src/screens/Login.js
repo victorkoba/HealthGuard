@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Alert
 } from "react-native";
+
 import { useFonts } from "expo-font";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,29 +19,30 @@ export default function LoginScreen({
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
-  const handleLogin = () => {
-    if (email === "victorkoba08@gmail.com" && senha === "123456") {
-      navigation.navigate("App");
+ const fazerLogin = async () => {
+  try {
+    const res = await fetch("https://ye0elggnhg.execute-api.us-east-1.amazonaws.com/prod2/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, senha }),
+    });
+
+    const data = await res.json();
+    console.log(data); // Para depuração
+
+    if (res.status === 200) {
+      if (data.user.tipoUsuario === "admin") {
+        navigation.navigate("Inicio");
+      } else {
+        navigation.navigate("Inicio");
+      }
     } else {
-      Alert.alert(
-        "Erro",
-        "Email ou senha incorretos"
-      );
+      Alert.alert("Erro", data.message || "Falha no login");
     }
-  };
-
-  const [fontsLoaded] = useFonts({
-    "Roboto-Bold": require("../../assets/fonts/KantumruyPro-VariableFont_wght.ttf"),
-  });
-
-  if (!fontsLoaded) {
-    return (
-      <ActivityIndicator
-        size="large"
-        style={{ flex: 1 }}
-      />
-    );
+  } catch (err) {
+    Alert.alert("Erro", err.message);
   }
+};
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
@@ -81,7 +83,7 @@ export default function LoginScreen({
 
         <TouchableOpacity
           style={styles.button}
-          onPress={handleLogin}
+          onPress={fazerLogin}
         >
           <Text style={styles.buttonText}>
             Login
