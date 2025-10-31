@@ -29,10 +29,6 @@ export default function LoginScreen({
     }
   };
 
-  // const [email, setEmail] = useState("");
-  // const [senha, setSenha] = useState("");
-  // const [loading, setLoading] = useState(false);
-
   const [fontsLoaded] = useFonts({
     "Roboto-Bold": require("../../assets/fonts/KantumruyPro-VariableFont_wght.ttf"),
   });
@@ -45,29 +41,6 @@ export default function LoginScreen({
       />
     );
   }
-
-  // const handleLogin = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await fetch("https://SEU_ENDPOINT_API/login", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ email, senha })
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (data.success) {
-  //       alert("Login efetuado com sucesso!");
-  //     } else {
-  //       alert("Email ou senha incorretos");
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     alert("Erro ao fazer login");
-  //   }
-  //   setLoading(false);
-  // };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
