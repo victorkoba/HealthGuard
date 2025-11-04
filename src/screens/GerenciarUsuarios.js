@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,207 +8,293 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import {
-  Ionicons,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Modal from "react-native-modal";
+import { dynamoDB } from "../../awsConfig";
+import { Picker } from "@react-native-picker/picker";
+import bcrypt from "bcryptjs";
+import {
+  ScanCommand,
+  PutItemCommand,
+  DeleteItemCommand,
+  UpdateItemCommand,
+} from "@aws-sdk/client-dynamodb";
 
-export default function GerenciarUsuariosScreen({
-  navigation,
-}) {
-  const [isAddModalVisible, setAddModalVisible] =
-    useState(false);
-  const [isModalVisible, setModalVisible] =
-    useState(false);
-  const [editModalVisible, setEditModalVisible] =
-    useState(false);
-  const [
-    usuarioSelecionadoIndex,
-    setUsuarioSelecionadoIndex,
-  ] = useState(null);
+export default function GerenciarUsuariosScreen({ navigation }) {
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [email, setEmail] = useState(
-    "email@exemplo.com"
-  );
-  const [senhaNova, setSenhaNova] = useState("");
-  const [senhaConfirmar, setSenhaConfirmar] =
-    useState("");
-  const [nome, setNome] = useState("");
+  const [isAddModalVisible, setAddModalVisible] = useState(false);
+  const [isEditModalVisible, setEditModalVisible] = useState(false);
 
-  // Estados do modal de criação
   const [novoNome, setNovoNome] = useState("");
   const [novoEmail, setNovoEmail] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
-  const [
-    novaSenhaConfirmar,
-    setNovaSenhaConfirmar,
-  ] = useState("");
+  const [novaSenhaConfirmar, setNovaSenhaConfirmar] = useState("");
+  const [novoTipo, setNovoTipo] = useState("funcionario");
 
-  const usuarios = [
-    "Jacquys Barbosa",
-    "Miguel Sales",
-    "Victor Koba",
-    "Nicole Oliveira",
-    "Lucas Machado",
-    "Luis Felipe",
-    "André Batista",
-    "Adriana Koba",
-  ];
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
+  const [tipoLogado] = useState("admin"); // simulação do usuário logado
+
+  const [idLogado, setIdLogado] = useState(null);
+
+
+  // 🔄 Buscar usuários
+  const carregarUsuarios = async () => {
+    try {
+      setLoading(true);
+      const data = await dynamoDB.send(
+        new ScanCommand({ TableName: "usuarios" })
+      );
+
+      const lista =
+        data.Items?.map((item) => ({
+          id: item.id.N,
+          nome: item.nome.S,
+          email: item.email.S,
+          tipo: item.tipo?.S || "funcionario",
+        })) || [];
+
+      setUsuarios(lista);
+    } catch (err) {
+      console.error("Erro ao carregar usuários:", err);
+      Alert.alert("Erro", "Não foi possível carregar os usuários.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🧩 Adicionar novo usuário
+  const adicionarUsuario = async () => {
+    if (!novoNome || !novoEmail || !novaSenha || !novaSenhaConfirmar) {
+      Alert.alert("Erro", "Preencha todos os campos.");
+      return;
+    }
+
+    if (novaSenha !== novaSenhaConfirmar) {
+      Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+    }
+
+    try {
+      // 🔍 Verifica se já existe e-mail igual
+      const existente = await dynamoDB.send(
+        new ScanCommand({ TableName: "usuarios" })
+      );
+      const jaExiste = existente.Items?.some((u) => u.email.S === novoEmail);
+      if (jaExiste) {
+        Alert.alert("Erro", "Já existe um usuário com este e-mail.");
+        return;
+      }
+
+      const hashedSenha = await bcrypt.hash(novaSenha, 10);
+
+      const params = {
+        TableName: "usuarios",
+        Item: {
+          id: { N: Date.now().toString() },
+          nome: { S: novoNome },
+          email: { S: novoEmail },
+          senha: { S: hashedSenha },
+          tipo: { S: novoTipo },
+        },
+      };
+
+      await dynamoDB.send(new PutItemCommand(params));
+
+      Alert.alert("Sucesso", "Usuário criado com sucesso!");
+      setAddModalVisible(false);
+      setNovoNome("");
+      setNovoEmail("");
+      setNovaSenha("");
+      setNovaSenhaConfirmar("");
+      setNovoTipo("funcionario");
+      carregarUsuarios();
+    } catch (error) {
+      console.error("Erro ao adicionar usuário:", error);
+      Alert.alert("Erro", "Falha ao salvar usuário no banco.");
+    }
+  };
+
+  // ✏️ Editar usuário
+  const abrirModalEdicao = (usuario) => {
+    setUsuarioEditando(usuario);
+    setNovoNome(usuario.nome);
+    setNovoEmail(usuario.email);
+    setNovaSenha("");
+    setNovaSenhaConfirmar("");
+    setNovoTipo(usuario.tipo);
+    setEditModalVisible(true);
+  };
+
+  const salvarEdicao = async () => {
+    if (!novoNome) {
+      Alert.alert("Erro", "O nome não pode ficar vazio.");
+      return;
+    }
+
+    if (novaSenha && novaSenha !== novaSenhaConfirmar) {
+      Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+    }
+
+    try {
+      let senhaHash = null;
+      if (novaSenha) {
+        // 🔐 Gera o hash da nova senha antes de salvar
+        const salt = await bcrypt.genSalt(10);
+        senhaHash = await bcrypt.hash(novaSenha, salt);
+      }
+
+      const params = {
+        TableName: "usuarios",
+        Key: { id: { N: usuarioEditando.id } },
+        UpdateExpression:
+          "SET nome = :nome, tipo = :tipo" +
+          (novaSenha ? ", senha = :senha" : ""),
+        ExpressionAttributeValues: {
+          ":nome": { S: novoNome },
+          ":tipo": { S: novoTipo },
+          ...(novaSenha ? { ":senha": { S: senhaHash } } : {}),
+        },
+      };
+
+      await dynamoDB.send(new UpdateItemCommand(params));
+
+      Alert.alert("Sucesso", "Usuário atualizado com sucesso!");
+      setEditModalVisible(false);
+      carregarUsuarios();
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      Alert.alert("Erro", "Não foi possível atualizar o usuário.");
+    }
+  };
+
+  // ❌ Excluir usuário
+  const excluirUsuario = async (id) => {
+    Alert.alert("Excluir", "Deseja realmente excluir este usuário?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await dynamoDB.send(
+              new DeleteItemCommand({
+                TableName: "usuarios",
+                Key: { id: { N: id } },
+              })
+            );
+            Alert.alert("Sucesso", "Usuário excluído com sucesso!");
+            carregarUsuarios();
+          } catch (err) {
+            console.error("Erro ao excluir usuário:", err);
+            Alert.alert("Erro", "Não foi possível excluir o usuário.");
+          }
+        },
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    carregarUsuarios();
+  }, []);
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "#305F49",
-      }}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-      >
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <TouchableOpacity
               style={styles.drawer}
-              onPress={() =>
-                navigation.openDrawer()
-              }
+              onPress={() => navigation.openDrawer()}
             >
-              <Ionicons
-                name="menu"
-                size={50}
-                color="#305F49"
-              />
+              <Ionicons name="menu" size={50} color="#305F49" />
             </TouchableOpacity>
-            <Image
-              style={styles.logo}
-              source={require("../assets/logo.png")}
-            />
+            <Image style={styles.logo} source={require("../assets/logo.png")} />
           </View>
 
           <View style={styles.content}>
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>
-                Gerenciar usuários
-              </Text>
-            </View>
+            <Text style={styles.title}>Gerenciar usuários</Text>
 
-            <TouchableOpacity
-              onPress={() =>
-                setAddModalVisible(true)
-              }
-              style={styles.userCardAdd}
-            >
-              <View style={styles.userInfoAdd}>
-                <View
-                  style={styles.contentIconAdd}
-                >
-                  <Ionicons
-                    name="add-outline"
-                    size={40}
-                    color="#305F49"
-                  />
-                </View>
-                <Text style={styles.userNameAdd}>
-                  Criar novo usuário
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {usuarios.map((usuario, index) => (
-              <View
-                key={index}
-                style={styles.userCard}
+            {tipoLogado === "admin" && (
+              <TouchableOpacity
+                onPress={() => setAddModalVisible(true)}
+                style={styles.userCardAdd}
               >
-                <View style={styles.userInfo}>
-                  <View
-                    style={styles.contentIcon}
-                  >
-                    <Ionicons
-                      name="person-outline"
-                      size={40}
-                      color="#fff"
-                    />
+                <View style={styles.userInfoAdd}>
+                  <View style={styles.contentIconAdd}>
+                    <Ionicons name="add-outline" size={40} color="#305F49" />
                   </View>
-                  <Text style={styles.userName}>
-                    {usuario}
-                  </Text>
+                  <Text style={styles.userNameAdd}>Criar novo usuário</Text>
                 </View>
+              </TouchableOpacity>
+            )}
 
-                <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => {
-                      setModalVisible(true);
-                      setUsuarioSelecionadoIndex(
-                        index
-                      );
-                      setNome(usuario);
-                      setSenhaNova("");
-                      setSenhaConfirmar("");
-                      setEditModalVisible(true);
-                    }}
-                  >
-                    <MaterialIcons
-                      name="edit"
-                      size={20}
-                      color="#fff"
-                    />
-                  </TouchableOpacity>
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color="#fff"
+                style={{ marginTop: 30 }}
+              />
+            ) : usuarios.length === 0 ? (
+              <Text style={{ color: "#fff", marginTop: 40, fontSize: 18 }}>
+                Nenhum usuário registrado
+              </Text>
+            ) : (
+              usuarios.map((usuario) => (
+                <View key={usuario.id} style={styles.userCard}>
+                  <View style={styles.userInfo}>
+                    <View style={styles.contentIcon}>
+                      <Ionicons name="person-outline" size={40} color="#fff" />
+                    </View>
+                    <View>
+                      <Text style={styles.userName}>{usuario.nome}</Text>
+                      <Text style={{ color: "#666", fontSize: 13 }}>
+                        {usuario.email}
+                      </Text>
+                    </View>
+                  </View>
 
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => {
-                      Alert.alert(
-                        "Excluir",
-                        "Deseja realmente excluir esse usuário?",
-                        [
-                          {
-                            text: "Cancelar",
-                          },
-                          {
-                            text: "Excluir",
-                            onPress: () => {
-                              Alert.alert(
-                                "Sucesso",
-                                "Você exclui esse usuário."
-                              );
-                            },
-                          },
-                        ],
-                        { cancelable: false }
-                      );
-                    }}
-                  >
-                    <MaterialIcons
-                      name="delete"
-                      size={20}
-                      color="#fff"
-                    />
-                  </TouchableOpacity>
+                  {tipoLogado === "admin" && (
+                    <View style={styles.actions}>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => abrirModalEdicao(usuario)}
+                      >
+                        <MaterialIcons name="edit" size={20} color="#fff" />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => excluirUsuario(usuario.id)}
+                      >
+                        <MaterialIcons name="delete" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
+
+      {/* MODAL DE CRIAÇÃO */}
       <Modal
         isVisible={isAddModalVisible}
-        style={{ margin: 0 }}
-        onBackdropPress={() =>
-          setAddModalVisible(false)
-        }
+        onBackdropPress={() => setAddModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>
-              Criar novo usuário
-            </Text>
+            <Text style={styles.modalTitle}>Criar novo usuário</Text>
 
             <TextInput
-              style={styles.inputNome}
+              style={styles.input}
               placeholder="Nome completo"
               placeholderTextColor="#ffffff85"
               value={novoNome}
@@ -242,162 +328,134 @@ export default function GerenciarUsuariosScreen({
               onChangeText={setNovaSenhaConfirmar}
             />
 
+            <View
+              style={[
+                styles.input,
+                { paddingHorizontal: 0, paddingVertical: 0 },
+              ]}
+            >
+              <Picker
+                selectedValue={novoTipo}
+                onValueChange={(itemValue) => setNovoTipo(itemValue)}
+                dropdownIconColor="#fff"
+                style={{
+                  color: "#fff",
+                  backgroundColor: "transparent",
+                  width: "100%",
+                }}
+              >
+                <Picker.Item
+                  label="Funcionário"
+                  value="funcionario"
+                  color="#305F49"
+                />
+                <Picker.Item
+                  label="Administrador"
+                  value="admin"
+                  color="#305F49"
+                />
+              </Picker>
+            </View>
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.cancelBtn}
-                onPress={() =>
-                  setAddModalVisible(false)
-                }
+                onPress={() => setAddModalVisible(false)}
               >
-                <Text
-                  style={styles.btnTextCancel}
-                >
-                  Cancelar
-                </Text>
+                <Text style={styles.btnTextCancel}>Cancelar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.saveBtn}
-                onPress={() => {
-                  if (
-                    !novoNome ||
-                    !novoEmail ||
-                    !novaSenha ||
-                    !novaSenhaConfirmar
-                  ) {
-                    Alert.alert(
-                      "Erro",
-                      "Preencha todos os campos."
-                    );
-                    return;
-                  }
-
-                  if (
-                    novaSenha !==
-                    novaSenhaConfirmar
-                  ) {
-                    Alert.alert(
-                      "Erro",
-                      "As senhas não coincidem."
-                    );
-                    return;
-                  }
-
-                  Alert.alert(
-                    "Sucesso",
-                    "Novo usuário criado com sucesso!"
-                  );
-                  setAddModalVisible(false);
-                  setNovoNome("");
-                  setNovoEmail("");
-                  setNovaSenha("");
-                  setNovaSenhaConfirmar("");
-                }}
+                onPress={adicionarUsuario}
               >
-                <Text style={styles.btnText}>
-                  Salvar
-                </Text>
+                <Text style={styles.btnText}>Salvar</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* MODAL DE EDIÇÃO */}
       <Modal
-        isVisible={isModalVisible}
-        style={{ margin: 0 }}
-        onBackdropPress={() =>
-          setModalVisible(false)
-        }
+        isVisible={isEditModalVisible}
+        onBackdropPress={() => setEditModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>
-              Editar usuário
-            </Text>
+            <Text style={styles.modalTitle}>Editar usuário</Text>
 
             <TextInput
-              style={styles.inputNome}
-              value={nome}
-              onChangeText={setNome}
+              style={styles.input}
+              placeholder="Nome completo"
+              placeholderTextColor="#ffffff85"
+              value={novoNome}
+              onChangeText={setNovoNome}
             />
 
             <TextInput
-              style={styles.inputEmail}
-              value={email}
+              style={[styles.input, { opacity: 0.6 }]}
               editable={false}
-              keyboardType="email-address"
+              value={novoEmail}
             />
 
             <TextInput
               style={styles.input}
-              value={senhaNova}
-              onChangeText={setSenhaNova}
-              placeholder="Nova senha"
-              placeholderTextColor={"#ffffff85"}
+              placeholder="Nova senha (opcional)"
+              placeholderTextColor="#ffffff85"
               secureTextEntry
+              value={novaSenha}
+              onChangeText={setNovaSenha}
             />
 
             <TextInput
               style={styles.input}
-              value={senhaConfirmar}
-              onChangeText={setSenhaConfirmar}
               placeholder="Confirmar nova senha"
-              placeholderTextColor={"#ffffff85"}
+              placeholderTextColor="#ffffff85"
               secureTextEntry
+              value={novaSenhaConfirmar}
+              onChangeText={setNovaSenhaConfirmar}
             />
+
+            <View
+              style={[
+                styles.input,
+                { paddingHorizontal: 0, paddingVertical: 0 },
+              ]}
+            >
+              <Picker
+                selectedValue={novoTipo}
+                onValueChange={(itemValue) => setNovoTipo(itemValue)}
+                dropdownIconColor="#fff"
+                style={{
+                  color: "#fff",
+                  backgroundColor: "transparent",
+                  width: "100%",
+                }}
+              >
+                <Picker.Item
+                  label="Funcionário"
+                  value="funcionario"
+                  color="#305F49"
+                />
+                <Picker.Item
+                  label="Administrador"
+                  value="admin"
+                  color="#305F49"
+                />
+              </Picker>
+            </View>
 
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.cancelBtn}
-                onPress={() =>
-                  setModalVisible(false)
-                }
+                onPress={() => setEditModalVisible(false)}
               >
-                <Text
-                  style={styles.btnTextCancel}
-                >
-                  Cancelar
-                </Text>
+                <Text style={styles.btnTextCancel}>Cancelar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.saveBtn}
-                onPress={() => {
-                  Alert.alert(
-                    "Confirmação",
-                    "Deseja realmente salvar essas alterações?",
-                    [
-                      {
-                        text: "Cancelar",
-                        onPress: () => {
-                          setModalVisible(false);
-                        },
-                        style: "cancel",
-                      },
-                      {
-                        text: "Confirmar",
-                        onPress: () => {
-                          console.log(
-                            "Atualizar dados:",
-                            {
-                              nome,
-                              senhaNova,
-                              senhaConfirmar,
-                            }
-                          );
-                          setModalVisible(false);
-                        },
-                      },
-                    ],
-                    {
-                      cancelable: false,
-                    }
-                  );
-                }}
-              >
-                <Text style={styles.btnText}>
-                  Salvar
-                </Text>
+              <TouchableOpacity style={styles.saveBtn} onPress={salvarEdicao}>
+                <Text style={styles.btnText}>Salvar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -407,6 +465,7 @@ export default function GerenciarUsuariosScreen({
   );
 }
 
+// 🔧 ESTILOS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -414,7 +473,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
   },
-
   contentIcon: {
     backgroundColor: "#305F49",
     width: 60,
@@ -431,21 +489,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  logo: {
-    width: 280,
-    resizeMode: "contain",
-    marginTop: -60,
-  },
-  drawer: {
-    marginTop: -60,
-    marginRight: 20,
-  },
+  logo: { width: 280, resizeMode: "contain", marginTop: -60 },
+  drawer: { marginTop: -60, marginRight: 20 },
   logoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   content: {
     width: "100%",
     height: "100%",
@@ -453,23 +503,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 80,
     alignItems: "center",
     paddingTop: 40,
+    paddingBottom: 100,
   },
-
-  titleContainer: {
-    padding: 15,
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 10,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 50,
-    marginBottom: 20,
-  },
-
-  title: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-
+  title: { color: "#fff", fontSize: 32, fontWeight: "bold", marginBottom: 20 },
   userCard: {
     backgroundColor: "#EAF3EC",
     shadowColor: "#000",
@@ -485,7 +521,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 15,
   },
-
   userCardAdd: {
     backgroundColor: "#305F49",
     width: "90%",
@@ -499,54 +534,19 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     borderStyle: "dashed",
   },
-
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  userInfoAdd: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  userName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#305F49",
-  },
-
-  userNameAdd: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#fff",
-  },
-
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-
-  editButton: {
-    backgroundColor: "#305F49",
-    padding: 8,
-    borderRadius: 50,
-  },
-
-  deleteButton: {
-    backgroundColor: "#D32F2F",
-    padding: 8,
-    borderRadius: 50,
-  },
+  userInfo: { flexDirection: "row", alignItems: "center", gap: 10 },
+  userInfoAdd: { flexDirection: "row", alignItems: "center", gap: 10 },
+  userName: { fontSize: 18, fontWeight: "600", color: "#305F49" },
+  userNameAdd: { fontSize: 18, fontWeight: "600", color: "#fff" },
+  actions: { flexDirection: "row", gap: 10 },
+  deleteButton: { backgroundColor: "#D32F2F", padding: 8, borderRadius: 50 },
+  editButton: { backgroundColor: "#1976D2", padding: 8, borderRadius: 50 },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.4)",
   },
-
   modalBox: {
     width: "80%",
     backgroundColor: "#305F49",
@@ -563,31 +563,12 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#fff",
-    color: "#888",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-  },
-  inputEmail: {
-    borderWidth: 1,
-    borderColor: "#888888be",
-    color: "#888888be",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-  },
-  inputNome: {
-    borderWidth: 1,
-    borderColor: "#fff",
     color: "#fff",
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
   },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+  modalActions: { flexDirection: "row", justifyContent: "space-between" },
   cancelBtn: {
     backgroundColor: "#fff",
     padding: 12,
@@ -603,12 +584,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-  btnText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  btnTextCancel: {
-    color: "#305F49",
-    fontWeight: "bold",
-  },
+  btnText: { color: "#fff", fontWeight: "bold" },
+  btnTextCancel: { color: "#305F49", fontWeight: "bold" },
 });

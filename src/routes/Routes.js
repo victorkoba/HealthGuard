@@ -48,6 +48,10 @@ export default function NativeStack() {
         name="CriarNovaSenha"
         component={CriarNovaSenha}
       />
+      <Stack.Screen
+        name="Inicio"
+        component={Inicio}
+      />
     </Stack.Navigator>
   );
 }

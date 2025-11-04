@@ -28,7 +28,7 @@ export default function HomeScreen({navigation}) {
         </Text>
 
         <TouchableOpacity style={styles.button}
-        onPress={() => navigation.navigate("Perfil")}
+        onPress={() => navigation.navigate('App', { screen: 'Perfil' })}
         >
           <TouchableOpacity
             style={styles.iconButton}
@@ -44,7 +44,7 @@ export default function HomeScreen({navigation}) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button}
-        onPress={() => navigation.navigate("GerenciarTemperatura")}
+        onPress={() => navigation.navigate('App', { screen: 'GerenciarTemperatura' })}
         >
           <TouchableOpacity
             style={styles.iconButton}
@@ -60,7 +60,7 @@ export default function HomeScreen({navigation}) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button}
-        onPress={() => navigation.navigate("Relatorios")}
+        onPress={() => navigation.navigate('App', { screen: 'Relatorios' })}
         >
           <TouchableOpacity
             style={styles.iconButton}
@@ -76,7 +76,7 @@ export default function HomeScreen({navigation}) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button}
-        onPress={() => navigation.navigate("Duvidas")}
+        onPress={() => navigation.navigate('App', { screen: 'Duvidas' })}
         >
           <TouchableOpacity
             style={styles.iconButton}
@@ -92,7 +92,7 @@ export default function HomeScreen({navigation}) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button}
-        onPress={() => navigation.navigate("GerenciarUsuarios")}
+        onPress={() => navigation.navigate('App', { screen: 'GerenciarUsuarios' })}
         >
           <TouchableOpacity
             style={styles.iconButton}
