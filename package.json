@@ -44,6 +44,7 @@
     "react-native-sweet-alert": "^3.5.0",
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "^0.21.0",
+    "serialport": "^13.0.0",
     "sweetalert2": "^11.26.2",
     "undefined": "react-native-masked-view/masked-view"
   },
