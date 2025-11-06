@@ -435,8 +435,9 @@ const styles = StyleSheet.create({
   },
   calendarText: {
     textAlign: 'center',
+    lineHeight: 45,
     color: "#fff",
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "600",
   },
 

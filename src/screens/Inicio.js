@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Image,
   View,
@@ -9,8 +9,22 @@ import {
 } from "react-native";
 import { useFonts } from "expo-font";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen({navigation}) {
+
+  // Verifica o tipo de usuário logado
+  const [tipoUsuario, setTipoUsuario] = useState(null);
+  useEffect(() => {
+    const carregarUsuario = async () => {
+      const usuarioSalvo = await AsyncStorage.getItem("usuarioLogado");
+      if (usuarioSalvo) {
+        const usuario = JSON.parse(usuarioSalvo);
+        setTipoUsuario(usuario.tipo);
+      }
+    };
+    carregarUsuario();
+  }, []);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
     <ScrollView>
@@ -91,21 +105,22 @@ export default function HomeScreen({navigation}) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}
-        onPress={() => navigation.navigate('App', { screen: 'GerenciarUsuarios' })}
-        >
-          <TouchableOpacity
-            style={styles.iconButton}
-          >
-            <Image
-              style={styles.icon}
-              source={require("../assets/icon-gerenciar-usuarios.png")}
-            />
-          </TouchableOpacity>
-          <Text style={styles.buttonText}>
-            Gerenciar usuários
-          </Text>
-        </TouchableOpacity>
+        {tipoUsuario === "admin" && (
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() =>
+                  navigation.navigate("App", { screen: "GerenciarUsuarios" })
+                }
+              >
+                <TouchableOpacity style={styles.iconButton}>
+                  <Image
+                    style={styles.icon}
+                    source={require("../assets/icon-gerenciar-usuarios.png")}
+                  />
+                </TouchableOpacity>
+                <Text style={styles.buttonText}>Gerenciar usuários</Text>
+              </TouchableOpacity>
+            )}
       </View>
     </View>
     </ScrollView>
