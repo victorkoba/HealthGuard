@@ -195,7 +195,7 @@ export default function PerfilScreen({ navigation }) {
                                 <Ionicons name="person-outline" size={150} color="#fff" />
                             )}
                             <View style={styles.iconeEditar}>
-                                <Ionicons name="pencil" size={28} color="#fff" />
+                                <Ionicons name="pencil" size={20} color="#fff" />
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     btnSair: {
         backgroundColor: "#305F49",
         padding: 10,
-        width: 170,
+        width: 250,
         borderRadius: 10,
         borderWidth: 2,
         borderColor: "#679880",
