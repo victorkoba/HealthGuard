@@ -1,11 +1,9 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { S3Client } from "@aws-sdk/client-s3";
 
-const AWS_ACCESS_KEY_ID = "ASIAZYPPXAY42ZOOANHN";
-const AWS_SECRET_ACCESS_KEY = "sSqLvAWI/Gjluv5F351pMDKe643bPF3SXC5/Urwe";
-const AWS_SESSION_TOKEN = "IQoJb3JpZ2luX2VjEFQaCXVzLXdlc3QtMiJHMEUCIEPtvVMbfYR6V+PsaS4Sod/lEW/XRoI/9ya9St8YEzGxAiEAt/+93FEY9jfhchG+zYuhOLOGd18IWSZUzUmIw+u2ZIUquAIIHRAAGgw2NzEwNTQ0OTczMzciDL/zHH5EDHhzGOss0iqVAtg3qFbr0YylhtjHJOQmwXnXOORpmKpArlRRG1hXgeG2QCohVphhsbDemlfWHbUbiNzhOc3/M9CDcGKDoCLrkR8S7YYUjM3fq3lYENm17EhsncRcT30lYkFfgcJ2fAXig+Thwdrg5y9jTcrd95UtLF1F1kZHZIFetTCky1tgxC4nu1CEn3Tmu9OQ6emvWD2tnxeWOS2Tm8rw0Smj5TjPohfqGkprCGBc69ERqEHxJZf4EeSGXAYWckq/EgicyWyjaxoOMYKOfK6vQLlxLnQFvPQjwAq7KTd3HurhJUOjoi6lLwiZLYuJnPP+eD9NZR7MZDsNmukgIPeruBBbvs3X1qHhMv7Pe2eDHrpv5k6KPht189pOu48w1MPMyAY6nQFhIZ90xmewWCaf+Tz++SEKia6hbfrrnckWNTFsDu+iGVUXXtbSdefSp5HjPnu8AUIw7Q9hbps1y6ivZo3bZlA+2v/3cMTUPotAIHBbeAh8Mjvqnxnnlk/kYdiKmWz/01hoFxgB2TWZMtoCZuhv8KC41J8GN1WEnrgAs3B67uRM0Y+tr+u/+iICVacq9Apox3irCow/o+piF9+KKAdE";
-
-// Região da AWS (ajuste se for diferente)
+const AWS_ACCESS_KEY_ID = "ASIAZYPPXAY4TFDC3YXM";
+const AWS_SECRET_ACCESS_KEY = "lIVRETqJbYemEA2G7n9+/NUqJeR+WtPn8gkM61LS";
+const AWS_SESSION_TOKEN = "IQoJb3JpZ2luX2VjEP3//////////wEaCXVzLXdlc3QtMiJHMEUCIAdt1UuVfGw5Fu8VYG6dlkNpDjHrdG2B6FxoVErMQ1ORAiEAvkZHvP9t4jFaWSviVCtzdVDz8H6mDXO46FdgQJbX5AoqwQIIxv//////////ARAAGgw2NzEwNTQ0OTczMzciDEY8lLj+VxWV3kRe+yqVAlJwtu+xvFEK/Kg5xVq9vkQbLcUobi2BRMptdGWmvppU/pyuuW4N3TcRwjNCsJUwJti7RoJH4SL+ZMNozWcL5A5qBgALvlfxZCArQs2HAfbZtNc1wZCqDtU9yu97jHOrhGkPvunb+oRXSJccjDaCdhencltAuYUXscW1oIqODMW1j/ZOIezCuP8CMn66Dn7B2DwydRnC/mug0wtL/0evAMapb0TbYqNd0Qu6Y5ol0rReJE9pOYv40+IHYekhl7hhbU+qfiroIGIaSeFQp82CC+hT3/NtNcsulL7dJ5x/OiPs20E3uKrJljv0aEwhHzp0rk8/AdkNNaTFXLXZsMPU4s/htWEbcMLCdvCkkYv59gwOeDJ++LUwitrxyAY6nQFrGp7ECUT+wDchyF6wmj9QRu94Drb2ChBT+gxgU5KiyXWyQ5g6KitjIIzXM7noz5uaRMLH8TB6aShtkTnhCy6AOYsB5Kcg6FVoCzmovbxduTETxhkfymrClH9lDG4JeztsscNtQIrPjHMi/IUACrCNvEWDofMOS+wgolY44ZlIBaQY7XOFifr+RnoY5Mtfm5Nk6MBg3k8wWUHmzM5R"
 export const REGION = "us-east-1";
 export const BUCKET_NAME = "healthguad-profile";
 
