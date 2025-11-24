@@ -22,8 +22,12 @@ export default function NativeStack() {
   return (
      <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="Splash"
+      initialRouteName="GerenciarTemperatura"
     >
+      <Stack.Screen
+        name="GerenciarTemperatura"
+        component={GerenciarTemperatura}
+      />
       <Stack.Screen
         name="Splash"
         component={SplashScreen}

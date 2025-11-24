@@ -1,4 +1,4 @@
-import React, { useState } from "react"; import {
+import React, { useState, useEffect } from "react"; import {
   Text,
   StyleSheet,
   TouchableOpacity,
@@ -13,10 +13,53 @@ import { Dimensions } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Modal from "react-native-modal";
+import { getUltimaLeitura, getMinMaxTemperatura  } from '../../dhtService';
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function GerenciarTemperaturaScreen({ navigation }) {
+  const [minTemp, setMinTemp] = useState("--");
+  const [maxTemp, setMaxTemp] = useState("--");
+
+useEffect(() => {
+  async function carregar() {
+    const result = await getMinMaxTemperatura();
+
+    if (result) {
+      setMinTemp(result.min);
+      setMaxTemp(result.max);
+    }
+  }
+
+  carregar();
+
+  // Atualiza a cada 10 segundos automaticamente
+  const intervalo = setInterval(carregar, 10000);
+
+  return () => clearInterval(intervalo);
+}, []);
+
+
+  const [temp, setTemp] = useState("--");
+  const [time, setTime] = useState("--");
+
+  async function carregar() {
+
+  const dados = await getUltimaLeitura();
+
+  if (dados) {
+    setTemp(dados.temperatura);
+    setTime(dados.timestamp);
+  }
+}
+
+  useEffect(() => {
+    carregar();
+
+    const timer = setInterval(carregar, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [isModalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [freezer, setFreezer] = useState();
@@ -143,8 +186,8 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
 
             <View style={styles.cardMain}>
               <Text style={styles.title}>Temperatura atual dentro do freezer 2</Text>
-              <Text style={styles.temp}>7°C</Text>
-              <Text style={styles.subTemp}>12° / 4°</Text>
+              <Text style={styles.temp}>{temp}°</Text>
+              <Text style={styles.subTemp}>{maxTemp}° / {minTemp}°</Text>
             </View>
 
             <View style={styles.cardTemp}>
@@ -393,6 +436,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   subTemp: {
+    marginLeft: 150,
+    marginTop: -45,
     color: "#fff",
     fontSize: 18,
     fontWeight: '600',
