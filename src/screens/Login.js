@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import dynamoDB from "../../awsConfig";
 import {
   Image,
   View,
@@ -13,8 +12,9 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScanCommand } from "@aws-sdk/client-dynamodb";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import bcrypt from "bcryptjs";
+import { dynamoDB } from "../../awsConfig";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -32,10 +32,10 @@ export default function LoginScreen({ navigation }) {
       // 🔍 Busca o usuário pelo email no DynamoDB
       const data = await dynamoDB.send(
         new ScanCommand({
-          TableName: "usuarios",
+          TableName: "Usuarios",
           FilterExpression: "email = :email",
           ExpressionAttributeValues: {
-            ":email": { S: email },
+            ":email": email,
           },
         })
       );
@@ -47,7 +47,7 @@ export default function LoginScreen({ navigation }) {
       }
 
       const usuario = data.Items[0];
-      const senhaHash = usuario.senha.S;
+      const senhaHash = usuario.senha;
 
       // 🔐 Compara a senha digitada com o hash salvo
       const senhaCorreta = await bcrypt.compare(senha, senhaHash);
@@ -62,18 +62,21 @@ export default function LoginScreen({ navigation }) {
       const tipoUsuario = usuario.tipo.S;
 
       // 💾 Armazena informações do usuário logado
+      // Formata os dados do DynamoDB para objetos JS normais
+      const usuarioFormatado = {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        tipo: usuario.tipo,
+      };
+
       await AsyncStorage.setItem(
         "usuarioLogado",
-        JSON.stringify({
-          id: usuario.id.S,
-          nome: usuario.nome.S,
-          email: usuario.email.S,
-          tipo: tipoUsuario,
-        })
+        JSON.stringify(usuarioFormatado)
       );
+      await AsyncStorage.setItem("usuarioId", usuarioFormatado.id);
 
-      Alert.alert("Sucesso", `Bem-vindo, ${usuario.nome.S}!`);
-      await AsyncStorage.setItem("usuarioId", usuario.id.N);
+      Alert.alert("Sucesso", `Bem-vindo, ${usuarioFormatado.nome}!`);
 
       if (tipoUsuario === "admin") {
         navigation.navigate("Inicio"); // Tela de admin

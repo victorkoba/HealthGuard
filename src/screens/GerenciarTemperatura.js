@@ -1,195 +1,242 @@
-import React, { useState, useEffect } from "react"; import {
+import React, { useState, useEffect } from "react";
+import {
   Text,
   StyleSheet,
   TouchableOpacity,
   View,
   Image,
   ScrollView,
-  TextInput,
-  Alert
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Modal from "react-native-modal";
-import { getUltimaLeitura, getMinMaxTemperatura  } from '../../dhtService';
+import {
+  getUltimaLeitura,
+  getMinMaxTemperatura,
+  getTemperaturas24h,
+  getTemperaturaSemana,
+} from "../../dhtService";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function GerenciarTemperaturaScreen({ navigation }) {
+  const [freezerAtual, setFreezerAtual] = useState(2);
+  const [freezerSelecionado, setFreezerSelecionado] = useState(2);
   const [minTemp, setMinTemp] = useState("--");
   const [maxTemp, setMaxTemp] = useState("--");
+  const [temp, setTemp] = useState("--");
+  const [time, setTime] = useState("--");
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  async function carregar() {
-    const result = await getMinMaxTemperatura();
+  // Dados dos gráficos
+  const [grafico24h, setGrafico24h] = useState({
+    labels: ["12:00", "12:30", "13:00", "13:30", "14:00", "Agora"],
+    data: [5, 9, 10, 12, 4, 3],
+  });
 
-    if (result) {
-      setMinTemp(result.min);
-      setMaxTemp(result.max);
+  const [graficoSemana, setGraficoSemana] = useState({
+    labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+    maxData: [12, 8, 11, 14, 10, 9, 9],
+    minData: [8, 6, 7, 10, 9, 8, 8],
+  });
+
+  // Carrega temperatura atual e min/max
+  async function carregarDados() {
+    try {
+      setLoading(true);
+
+      // Busca última leitura
+      const dadosUltima = await getUltimaLeitura(freezerAtual);
+      if (dadosUltima) {
+        setTemp(dadosUltima.temperatura.toFixed(1));
+        setTime(dadosUltima.timestamp);
+      }
+
+      // Busca min/max
+      const minMax = await getMinMaxTemperatura(freezerAtual);
+      if (minMax) {
+        setMinTemp(minMax.min);
+        setMaxTemp(minMax.max);
+      }
+
+      // Busca dados para gráfico de 24h
+      const dados24h = await getTemperaturas24h(freezerAtual);
+      if (dados24h.labels.length > 0) {
+        setGrafico24h(dados24h);
+      }
+
+      // Busca dados para gráfico semanal
+      const dadosSemana = await getTemperaturaSemana(freezerAtual);
+      if (dadosSemana.labels.length > 0) {
+        setGraficoSemana(dadosSemana);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      Alert.alert("Erro", "Não foi possível carregar os dados do freezer");
+    } finally {
+      setLoading(false);
     }
   }
 
-  carregar();
-
-  // Atualiza a cada 10 segundos automaticamente
-  const intervalo = setInterval(carregar, 10000);
-
-  return () => clearInterval(intervalo);
-}, []);
-
-
-  const [temp, setTemp] = useState("--");
-  const [time, setTime] = useState("--");
-
-  async function carregar() {
-
-  const dados = await getUltimaLeitura();
-
-  if (dados) {
-    setTemp(dados.temperatura);
-    setTime(dados.timestamp);
-  }
-}
-
   useEffect(() => {
-    carregar();
+    carregarDados();
 
-    const timer = setInterval(carregar, 10000);
-    return () => clearInterval(timer);
-  }, []);
+    // Atualiza a cada 10 segundos
+    const intervalo = setInterval(carregarDados, 10000);
+    return () => clearInterval(intervalo);
+  }, [freezerAtual]);
 
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [freezer, setFreezer] = useState();
+  const confirmarMudancaFreezer = () => {
+    Alert.alert(
+      "Confirmação",
+      `Deseja realmente mudar para o Freezer ${freezerSelecionado}?`,
+      [
+        {
+          text: "Cancelar",
+          onPress: () => {
+            setModalVisible(false);
+            setFreezerSelecionado(freezerAtual);
+          },
+          style: "cancel",
+        },
+        {
+          text: "Confirmar",
+          onPress: () => {
+            setFreezerAtual(freezerSelecionado);
+            setModalVisible(false);
+            setLoading(true);
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "#305F49",
-      }}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <TouchableOpacity
               style={styles.drawer}
-              onPress={() =>
-                navigation.openDrawer()
-              }
+              onPress={() => navigation.openDrawer()}
             >
-              <Ionicons
-                name="menu"
-                size={50}
-                color="#305F49"
-              />
+              <Ionicons name="menu" size={50} color="#305F49" />
             </TouchableOpacity>
-            <Image
-              style={styles.logo}
-              source={require("../assets/logo.png")}
-            />
+            <Image style={styles.logo} source={require("../assets/logo.png")} />
           </View>
 
           <View style={styles.content}>
+            {/* Card de seleção de freezer */}
             <View style={styles.card}>
               <Text style={styles.textSmall}>
-                Você está visualizando a temperatura do freezer 2
+                Você está visualizando a temperatura do freezer {freezerAtual}
               </Text>
               <View style={styles.freezerInfo}>
-                <TouchableOpacity style={styles.button}
-                  onPress={() => {
-                    setModalVisible(true)
-                    setEditModalVisible(true);
-                  }}
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => setModalVisible(true)}
                 >
                   <Text style={styles.buttonText}>Mudar freezer</Text>
                 </TouchableOpacity>
-                <Modal isVisible={isModalVisible}
-                  backdropOpacity={0.1}
-                  onBackdropPress={() => setModalVisible(false)}>
-                  <View style={styles.modalContainer}>
-                    <View style={styles.modalBox}>
 
-                      <Text style={styles.modalTitle}>
-                        Você deseja mudar para qual freezer?
-                      </Text>
-
-                      <View style={styles.freezerGrid}>
-                        {[1, 2, 3, 4].map((item) => (
-                          <TouchableOpacity
-                            key={item}
-                            style={styles.freezerItem}
-                            onPress={() => setFreezer(item)}
-                          >
-                            {freezer === item && (
-                              <View style={styles.selectedBadge}>
-                                <Text style={styles.selectedBadgeText}>Selecionado</Text>
-                              </View>
-                            )}
-
-                            <Image
-                              style={styles.iconFreezerModal}
-                              source={require("../assets/icon-freezer.png")}
-                            />
-                            <Text style={styles.freezerLabel}>Freezer {item}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-
-                      <View style={styles.modalActions}>
-                        <TouchableOpacity style={styles.cancelBtn}
-                          onPress={() => setModalVisible(false)}
-                        >
-                          <Text style={styles.cancelText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.confirmBtn}
-                          onPress={() => {
-                            Alert.alert(
-                              "Confirmação",
-                              "Deseja realmente mudar o freezer?",
-                              [
-                                {
-                                  text: "Cancelar",
-                                  onPress: () => {
-                                    setModalVisible(false);
-                                  },
-                                  style: "cancel",
-                                },
-                                {
-                                  text: "Confirmar",
-                                  onPress: () => {
-                                    setModalVisible(false);
-                                  },
-                                },
-                              ],
-                              { cancelable: false }
-                            );
-                          }}
-                        >
-                          <Text style={styles.confirmText}>Confirmar</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                    </View>
-                  </View>
-                </Modal>
                 <View style={styles.freezerLogo}>
                   <Image
                     style={styles.iconFreezer}
                     source={require("../assets/icon-freezer.png")}
                   />
-                  <Text style={styles.freezerLabel}>Freezer 2</Text>
+                  <Text style={styles.freezerLabel}>
+                    Freezer {freezerAtual}
+                  </Text>
                 </View>
               </View>
             </View>
 
-            <View style={styles.cardMain}>
-              <Text style={styles.title}>Temperatura atual dentro do freezer 2</Text>
-              <Text style={styles.temp}>{temp}°</Text>
-              <Text style={styles.subTemp}>{maxTemp}° / {minTemp}°</Text>
-            </View>
+            {/* Modal de seleção */}
+            <Modal
+              isVisible={isModalVisible}
+              backdropOpacity={0.5}
+              onBackdropPress={() => {
+                setModalVisible(false);
+                setFreezerSelecionado(freezerAtual);
+              }}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalBox}>
+                  <Text style={styles.modalTitle}>
+                    Você deseja mudar para qual freezer?
+                  </Text>
 
+                  <View style={styles.freezerGrid}>
+                    {[1, 2, 3].map((item) => (
+                      <TouchableOpacity
+                        key={item}
+                        style={styles.freezerItem}
+                        onPress={() => setFreezerSelecionado(item)}
+                      >
+                        {freezerSelecionado === item && (
+                          <View style={styles.selectedBadge}>
+                            <Text style={styles.selectedBadgeText}>
+                              Selecionado
+                            </Text>
+                          </View>
+                        )}
+                        <Image
+                          style={styles.iconFreezerModal}
+                          source={require("../assets/icon-freezer.png")}
+                        />
+                        <Text style={styles.freezerLabel}>Freezer {item}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity
+                      style={styles.cancelBtn}
+                      onPress={() => {
+                        setModalVisible(false);
+                        setFreezerSelecionado(freezerAtual);
+                      }}
+                    >
+                      <Text style={styles.cancelText}>Cancelar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.confirmBtn}
+                      onPress={confirmarMudancaFreezer}
+                    >
+                      <Text style={styles.confirmText}>Confirmar</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
+            {/* Card de temperatura atual */}
+            {loading ? (
+              <View style={styles.cardMain}>
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            ) : (
+              <View style={styles.cardMain}>
+                <Text style={styles.title}>
+                  Temperatura atual dentro do freezer {freezerAtual}
+                </Text>
+                <Text style={styles.temp}>{temp}°</Text>
+                {/* <Text style={styles.subTemp}>
+                  {maxTemp}° / {minTemp}°
+                </Text> */}
+                {/* <Text style={styles.lastUpdate}>
+                  Última atualização: {time}
+                </Text> */}
+              </View>
+            )}
+
+            {/* Gráfico de 24 horas */}
             <View style={styles.cardTemp}>
               <View style={styles.InfoTime}>
                 <Image
@@ -201,91 +248,168 @@ useEffect(() => {
                 </Text>
               </View>
               <View style={styles.chart}>
-                <LineChart
-                  data={{
-                    labels: ["12:00", "12:30", "13:00", "13:30", "14:00", "Agora"],
-                    datasets: [{ data: [5, 9, 10, 12, 4, 3], color: () => "#fff" }],
-                  }}
-                  width={340}
-                  height={200}
-                  yAxisSuffix="°"
-                  chartConfig={{
-                    backgroundGradientFrom: "#679880",
-                    backgroundGradientTo: "#679880",
-                    decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(48, 95, 73, ${opacity})`,
-                    labelColor: () => "#fff",
-                    propsForDots: {
-                      r: "5",
-                      strokeWidth: "2",
-                      stroke: "#fff",
-                      fill: "#fff",
-                    },
-                  }}
-                  withInnerLines={false}
-                  withVerticalLines={false}
-                  withHorizontalLines={false}
-                  bezier
-                  style={{
-                    borderRadius: 10,
-                    fontWeight: '600',
-                  }}
-                />
+                {loading ? (
+                  <ActivityIndicator size="large" color="#fff" />
+                ) : (
+                  <>
+                    {/* ---- EIXO Y FIXO (APENAS TEXTO) ---- */}
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 20,
+                        zIndex: 20,
+                      }}
+                    >
+                      <Text style={{ color: "#fff", fontSize: 16 }}>
+                        Temp (°C)
+                      </Text>
+                    </View>
 
-              </View>
-            </View>
-            <View style={styles.chartContainer}>
-                      <View style={styles.tittleChart}>
-                        <Image
-                          style={styles.chartIcon}
-                          source={require("../assets/icon-time.png")}
-                        />
-                        <Text style={styles.chartTitle}>
-                          Temperaturas registradas durante a semana
-                        </Text>
-                      </View>
+                    {/* ---- ÁREA DO GRÁFICO SCROLLÁVEL ---- */}
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{ marginLeft: 40 }} // espaço para o eixo Y fixo
+                      ref={(ref) => {
+                        if (ref) {
+                          setTimeout(
+                            () => ref.scrollToEnd({ animated: false }),
+                            100
+                          );
+                        }
+                      }}
+                      contentContainerStyle={{ paddingRight: 20 }}
+                    >
                       <LineChart
                         data={{
-                          labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+                          labels: grafico24h.labels,
                           datasets: [
-                            { data: [12, 8, 11, 14, 10, 9, 9], color: () => "#244C38" },
-                            { data: [8, 6, 7, 10, 9, 8, 8], color: () => "#ffffffbe" },
+                            {
+                              data:
+                                grafico24h.data.length > 0
+                                  ? grafico24h.data
+                                  : [0],
+                              color: () => "#fff",
+                            },
                           ],
                         }}
-                        width={screenWidth * 0.9}
-                        height={220}
-                        formatYLabel={(value) => `${parseInt(value)}°C`}
+                        width={grafico24h.labels.length * 80} // espaçamento entre os pontos
+                        height={240}
+                        withInnerLines={true}
+                        withHorizontalLines={true}
+                        withVerticalLines={true}
+                        yAxisSuffix="°"
                         chartConfig={{
                           backgroundGradientFrom: "#679880",
                           backgroundGradientTo: "#679880",
-                          color: () => "#244C38",
+                          decimalPlaces: 1,
+                          color: () => "#fff",
                           labelColor: () => "#fff",
-                          propsForBackgroundLines: {
-                            stroke: "transparent",
+                          propsForDots: {
+                            r: "6",
+                            strokeWidth: "3",
+                            stroke: "#fff",
+                            fill: "#fff",
                           },
                         }}
                         bezier
-                        style={{ borderRadius: 12 }}
+                        style={{ borderRadius: 10 }}
                       />
-            
-                      <View style={styles.legendContainer}>
-                        <View style={styles.legendItem}>
-                          <View style={[styles.colorBox, { backgroundColor: "#244C38" }]} />
-                          <Text style={styles.legendText}>Temperatura máxima</Text>
-                        </View>
-                        <View style={styles.legendItem}>
-                          <View style={[styles.colorBox, { backgroundColor: "#ffffffff" }]} />
-                          <Text style={styles.legendText}>Temperatura mínima</Text>
-                        </View>
-                      </View>
-            
+                    </ScrollView>
+
+                    {/* ---- EIXO X FIXO (HORÁRIO) ---- */}
+                    <View
+                      style={{
+                        position: "absolute",
+                        bottom: -5,
+                        left: 50,
+                        zIndex: 30,
+                      }}
+                    >
+                      <Text style={{ color: "#fff", fontSize: 16, width: 200 }}>
+                        Horário
+                      </Text>
                     </View>
+                  </>
+                )}
+              </View>
+            </View>
+
+            {/* Gráfico semanal */}
+            <View style={styles.chartContainer}>
+              <View style={styles.tittleChart}>
+                <Image
+                  style={styles.chartIcon}
+                  source={require("../assets/icon-time.png")}
+                />
+                <Text style={styles.chartTitle}>
+                  Temperaturas registradas durante a semana
+                </Text>
+              </View>
+
+              {loading ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <LineChart
+                  data={{
+                    labels: graficoSemana.labels,
+                    datasets: [
+                      {
+                        data:
+                          graficoSemana.maxData.length > 0
+                            ? graficoSemana.maxData
+                            : [0],
+                        color: () => "#244C38",
+                      },
+                      {
+                        data:
+                          graficoSemana.minData.length > 0
+                            ? graficoSemana.minData
+                            : [0],
+                        color: () => "#ffffffbe",
+                      },
+                    ],
+                  }}
+                  width={screenWidth * 0.9}
+                  height={220}
+                  formatYLabel={(value) => `${parseInt(value)}°C`}
+                  chartConfig={{
+                    backgroundGradientFrom: "#679880",
+                    backgroundGradientTo: "#679880",
+                    color: () => "#244C38",
+                    labelColor: () => "#fff",
+                    propsForBackgroundLines: {
+                      stroke: "transparent",
+                    },
+                  }}
+                  bezier
+                  style={{ borderRadius: 12 }}
+                />
+              )}
+
+              <View style={styles.legendContainer}>
+                <View style={styles.legendItem}>
+                  <View
+                    style={[styles.colorBox, { backgroundColor: "#244C38" }]}
+                  />
+                  <Text style={styles.legendText}>Temperatura máxima</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View
+                    style={[styles.colorBox, { backgroundColor: "#ffffffff" }]}
+                  />
+                  <Text style={styles.legendText}>Temperatura mínima</Text>
+                </View>
+              </View>
+            </View>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -325,37 +449,18 @@ const styles = StyleSheet.create({
   cardTemp: {
     backgroundColor: "#679880",
     width: 350,
-    height: 280,
+    minHeight: 280,
     borderRadius: 10,
     padding: 10,
     marginBottom: 20,
-  },
-  cardUltimasTemps: {
-    backgroundColor: "#679880",
-    width: 350,
-    height: 260,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-  },
-  ultimasTemps: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    justifyContent: 'center',
-  },
-  iconCalender: {
-    backgroundColor: "rgba(255,255,255, 0.2)",
-    borderRadius: 10,
-    height: 20,
-    width: 20,
-    marginLeft: 10,
-    marginRight: -10,
   },
   cardMain: {
     borderRadius: 20,
     padding: 16,
     marginBottom: 20,
     alignItems: "center",
+    minHeight: 200,
+    justifyContent: "center",
   },
   textSmall: {
     color: "#fff",
@@ -372,7 +477,6 @@ const styles = StyleSheet.create({
     height: 50,
     width: 50,
   },
-
   freezerInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -387,7 +491,6 @@ const styles = StyleSheet.create({
   freezerLogo: {
     marginTop: -50,
   },
-
   iconTime: {
     backgroundColor: "rgba(255,255,255, 0.2)",
     borderRadius: 20,
@@ -396,13 +499,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginRight: -10,
   },
-
   InfoTime: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    justifyContent: 'center',
+    justifyContent: "center",
   },
-
   button: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -416,19 +516,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  buttonTemps: {
-    backgroundColor: "rgba(255,255,255, 0.5)",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignSelf: "center",
-    marginTop: 25,
-  },
-
   title: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+    textAlign: "center",
   },
   temp: {
     color: "#fff",
@@ -440,50 +532,33 @@ const styles = StyleSheet.create({
     marginTop: -45,
     color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  lastUpdate: {
+    color: "#fff",
+    fontSize: 12,
+    marginTop: 10,
+    opacity: 0.8,
   },
   chart: {
     marginTop: 10,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 200,
   },
   subtitle: {
     color: "#fff",
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
     marginBottom: 10,
-    fontWeight: '600',
-  },
-  row: {
-    marginTop: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  day: {
-    fontSize: 14,
-    color: "#fff",
-    fontWeight: '600',
-  },
-  degrees: {
-    fontSize: 14,
-    color: "#fff",
-    fontWeight: '600',
-  },
-  linha: {
-    height: 1.3,
-    width: 180,
-    backgroundColor: '#ffffff59',
-    marginTop: 12,
-    borderRadius: 50,
+    fontWeight: "600",
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
   modalBox: {
     width: "85%",
     backgroundColor: "#305F49",
@@ -496,7 +571,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 10,
   },
-
   modalTitle: {
     fontSize: 20,
     color: "#FFFFFF",
@@ -504,27 +578,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-
   freezerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     marginBottom: 25,
   },
-
   freezerItem: {
     width: "45%",
     alignItems: "center",
     marginBottom: 20,
   },
-
-  freezerLabel: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-
   selectedBadge: {
     backgroundColor: "#9FD1B7",
     paddingVertical: 4,
@@ -532,18 +596,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 6,
   },
-
   selectedBadgeText: {
     fontSize: 12,
     color: "#fff",
     fontWeight: "bold",
   },
-
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-
   confirmBtn: {
     backgroundColor: "#9FD1B7",
     paddingVertical: 12,
@@ -552,26 +613,23 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     alignItems: "center",
   },
-
   cancelBtn: {
     backgroundColor: "#fff",
     paddingVertical: 12,
     borderRadius: 10,
     flex: 1,
-    marginLeft: 10,
+    marginRight: 10,
     alignItems: "center",
   },
-
   confirmText: {
     color: "#fff",
     fontWeight: "bold",
   },
-
   cancelText: {
     color: "#305F49",
     fontWeight: "bold",
   },
-   chartContainer: {
+  chartContainer: {
     backgroundColor: "#679880",
     borderRadius: 12,
     padding: 10,
@@ -596,7 +654,7 @@ const styles = StyleSheet.create({
     width: 20,
     marginRight: 5,
   },
-      legendContainer: {
+  legendContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: screenWidth * 0.9,
@@ -615,6 +673,6 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 14,
     color: "#fff",
-    fontWeight:'600',
+    fontWeight: "600",
   },
 });

@@ -1,156 +1,135 @@
-import AWS from 'aws-sdk';
+import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { dynamoDB } from "./awsConfig";
 
-const TABLE_NAME = "LeiturasDHT";
+function getTableName(freezerId) {
+  return `freezer${freezerId}`;
+}
 
-AWS.config.update({
-  region: 'us-east-1',
-  accessKeyId: 'ASIAZI2LGGRE27QL33FM',
-  secretAccessKey: 'gR+GdiRYZB2nW/acuv0XFNpI7Jxfmb8n+F9WmULh',
-  sessionToken: 'IQoJb3JpZ2luX2VjEIP//////////wEaCXVzLXdlc3QtMiJIMEYCIQDpRexnFbM+9KiVor81PHOOcOSRGLxylow3j4qQuhSTDwIhALge1OBUTw+AZz+TZIgCBycQ0fXqlQAP+mut+6GAqh+9KrACCEsQABoMNjM3NDIzNDY1NTQ1IgyQ4R5+Kestq5R64F8qjQJyW9zOKs4tsRe5ATsVN1Oolh/xrZ6YLOdF+xqoo6JtqPthbJnScAimVoFbFTvtW4Cptf/kEp/YLmSzNSulKsMkEHIzLywWdmAdwPzL5uz18rJj00vE9poMIMqtel+klF3EgF4vT0mpL8Jkoi5eVPDAFXDqzE7otDQPv4xAdHHjzPTFuhMvluFfJQSPte0EzMJnRxiOhXZYEKrQDPMDs5VY4vUkMOQmjrCB6bl+ZYRTHe7F3SvNn95ztBB1v1bVlga/znwLD1RIpxwYStJlZowSKxAvIf5S4k8XRgenchR3YMSNOetEkFU8JEloasLOguIdDryfj+Ug5msy4ywNCYQ1WIAmptTYvsbmHxd3njDzgI/JBjqcAV0hbwwOc420xm7diTgg2LlGchX2bCq6OVM6ZpWEQr/IcowbDbUjfwRbXbEwuM4XVM8E5SGFnBLlMK2a29Lgc6lXxlUNznzrMbCnK3LawQyy0WH/dv5XnKyxsUAOoQlNJAK18rvklUUiVms8S8EqSHWMrnetc1hu75EDe7hreD5sQVrFdA1oVrIoviHAAy3XqAVLmJQTZkWp0x/crQ=='
-   });
-
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
-export async function getUltimaLeitura() {
+// -------- BUSCAR ÚLTIMA LEITURA --------
+export async function getUltimaLeitura(freezerId) {
   try {
-    const params = {
-      TableName: TABLE_NAME
-    };
+    const table = getTableName(freezerId);
 
-    const data = await dynamoDB.scan(params).promise();
+    const resp = await dynamoDB.send(
+      new ScanCommand({
+        TableName: table,
+      })
+    );
 
-    if (!data.Items || data.Items.length === 0) {
-      return null;
-    }
+    if (!resp.Items || resp.Items.length === 0) return null;
 
-    // Ordenar pelo timestamp mais recente
-    const arredondado = data.Items.map(item => ({
-  ...item,
-  temperatura: Math.round(Number(item.temperatura))
-}));
+    const ordenado = resp.Items.sort((a, b) => b.timestamp - a.timestamp);
 
-const ultimo = arredondado.sort((a, b) =>
-  new Date(b.timestamp) - new Date(a.timestamp)
-)[0];
-
-    return ultimo;
+    return ordenado[0];
 
   } catch (error) {
-    console.error("Erro DynamoDB:", error);
+    console.log("ERRO getUltimaLeitura:", error);
     return null;
   }
 }
 
-export async function getMinMaxTemperatura() {
+// -------- BUSCAR MIN/MAX 24H --------
+export async function getMinMaxTemperatura(freezerId) {
   try {
-    const params = {
-      TableName: "LeiturasDHT"
+    const table = getTableName(freezerId);
+    const agora = Date.now();
+    const limite = agora - 24 * 60 * 60 * 1000;
+
+    const resp = await dynamoDB.send(
+      new ScanCommand({
+        TableName: table,
+      })
+    );
+
+    const filtrado = resp.Items?.filter(
+      (i) => i.timestamp >= limite && i.timestamp <= agora
+    ) || [];
+
+    if (filtrado.length === 0) return { min: 0, max: 0 };
+
+    const temps = filtrado.map((i) => Number(i.temperatura));
+
+    return {
+      min: Math.min(...temps),
+      max: Math.max(...temps),
     };
 
-    const data = await dynamoDB.scan(params).promise();
-
-    if (!data.Items || data.Items.length === 0) {
-      return null;
-    }
-
-    let min = Math.round(Number(data.Items[0].temperatura));
-    let max = Math.round(Number(data.Items[0].temperatura));
-
-    data.Items.forEach(item => {
-      const temp = Math.round(Number(item.temperatura));
-
-      if (temp < min) min = temp;
-      if (temp > max) max = temp;
-    });
-
-    return { min, max };
-
   } catch (error) {
-    console.error("Erro DynamoDB:", error);
-    return null;
+    console.log("ERRO getMinMaxTemperatura:", error);
+    return { min: 0, max: 0 };
   }
 }
 
-export async function getTemperaturasUltimas24h() {
+// -------- GRÁFICO 24H --------
+export async function getTemperaturas24h(freezerId) {
   try {
-    const params = {
-      TableName: "LeiturasDHT"
+    const table = getTableName(freezerId);
+    const agora = Date.now();
+    const limite = agora - 24 * 60 * 60 * 1000;
+
+    const resp = await dynamoDB.send(
+      new ScanCommand({
+        TableName: table,
+      })
+    );
+
+    const filtrado = resp.Items
+      ?.filter((i) => i.timestamp >= limite && i.timestamp <= agora)
+      ?.sort((a, b) => a.timestamp - b.timestamp) || [];
+
+    return {
+      labels: filtrado.map((i) =>
+        new Date(i.timestamp).toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      ),
+      data: filtrado.map((i) => Number(i.temperatura)),
     };
-
-    const data = await dynamoDB.scan(params).promise();
-
-    console.log("SCAN RAW 24H:", data.Items);
-
-    if (!data.Items || data.Items.length === 0) {
-      return { labels: [], valores: [] };
-    }
-
-    // ordenar por timestamp
-    const ordenado = data.Items.sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-    );
-
-    const labels = ordenado.map(item => {
-      const date = new Date(item.timestamp);
-      return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
-    });
-
-    const valores = ordenado.map(item =>
-      Number(item.temperatura)
-    );
-
-    console.log("LABELS MONTADOS:", labels);
-    console.log("VALORES MONTADOS:", valores);
-
-    return { labels, valores };
 
   } catch (error) {
-    console.error("ERRO 24H:", error);
-    return { labels: [], valores: [] };
+    console.log("ERRO getTemperaturas24h:", error);
+    return { labels: [], data: [] };
   }
 }
-export async function getMinMaxSemana() {
+
+// -------- GRÁFICO SEMANAL --------
+export async function getTemperaturaSemana(freezerId) {
   try {
-    const params = {
-      TableName: "LeiturasDHT"
-    };
+    const table = getTableName(freezerId);
+    const agora = Date.now();
+    const inicioSemana = agora - 7 * 24 * 60 * 60 * 1000;
 
-    const data = await dynamoDB.scan(params).promise();
+    const resp = await dynamoDB.send(
+      new ScanCommand({
+        TableName: table,
+      })
+    );
 
-    console.log("SCAN RAW SEMANA:", data.Items);
-
-    if (!data.Items || data.Items.length === 0) {
-      return { labels: [], min: [], max: [] };
-    }
+    const filtrado = resp.Items?.filter(
+      (i) => i.timestamp >= inicioSemana && i.timestamp <= agora
+    ) || [];
 
     const dias = {};
 
-    data.Items.forEach(item => {
-      const date = new Date(item.timestamp);
-      const dia = date.toLocaleDateString("pt-BR");
+    filtrado.forEach((i) => {
+      const dia = new Date(i.timestamp).toLocaleDateString("pt-BR", {
+        weekday: "short",
+      });
 
-      const temp = Number(item.temperatura);
+      if (!dias[dia]) dias[dia] = [];
 
-      if (!dias[dia]) {
-        dias[dia] = { min: temp, max: temp };
-      } else {
-        if (temp < dias[dia].min) dias[dia].min = temp;
-        if (temp > dias[dia].max) dias[dia].max = temp;
-      }
+      dias[dia].push(Number(i.temperatura));
     });
 
     const labels = Object.keys(dias);
-    const min = labels.map(d => dias[d].min);
-    const max = labels.map(d => dias[d].max);
+    const maxData = labels.map((d) => Math.max(...dias[d]));
+    const minData = labels.map((d) => Math.min(...dias[d]));
 
-    console.log("LABELS SEMANA:", labels);
-    console.log("MIN SEMANA:", min);
-    console.log("MAX SEMANA:", max);
-
-    return { labels, min, max };
+    return { labels, maxData, minData };
 
   } catch (error) {
-    console.error("ERRO SEMANA:", error);
-    return { labels: [], min: [], max: [] };
+    console.log("ERRO getTemperaturaSemana:", error);
+    return { labels: [], maxData: [], minData: [] };
   }
 }

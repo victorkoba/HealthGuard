@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,24 +6,369 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert
+  Alert,
+  Platform,
 } from "react-native";
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import Modal from "react-native-modal";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { dynamoDB } from "../../awsConfig";
 
 const screenWidth = Dimensions.get("window").width;
+const TABLE_NAME = "LeiturasDHT";
 
 export default function GerenciarTemperaturaScreen({ navigation }) {
   const [selectedDates, setSelectedDates] = useState({});
-
   const [isModalVisible, setModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [freezer, setFreezer] = useState();
+  const [currentFreezer, setCurrentFreezer] = useState(2);
+  const [tempFreezer, setTempFreezer] = useState(2);
+  const [isLoading, setIsLoading] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
+
+  // Função para converter string "DD/MM/YYYY HH:MM:SS" para timestamp
+  const dateStringToTimestamp = (dateStr) => {
+    if (typeof dateStr !== "string") return 0;
+
+    try {
+      // Split "24/11/2025 14:30:00" em partes
+      const [datePart, timePart] = dateStr.split(" ");
+      const [day, month, year] = datePart.split("/");
+      const [hours, minutes, seconds] = timePart.split(":");
+
+      // Criar data (mês é 0-indexed no JavaScript)
+      return new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes),
+        parseInt(seconds || 0)
+      ).getTime();
+    } catch (error) {
+      console.error("Erro ao converter data:", dateStr, error);
+      return 0;
+    }
+  };
+
+  // Função para formatar data (agora o timestamp já vem formatado do banco)
+  const formatDateBR = (dateString) => {
+    // Se já vier no formato "DD/MM/YYYY HH:MM:SS", retornar direto
+    if (typeof dateString === "string" && dateString.includes("/")) {
+      return dateString;
+    }
+
+    // Fallback para timestamp em número
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  };
+
+  // Função para buscar dados do DynamoDB
+  const fetchTemperatureData = async (freezerId, startDate, endDate) => {
+    try {
+      setIsLoading(true);
+      console.log(
+        `Buscando dados do Freezer ${freezerId} de ${startDate} a ${endDate}`
+      );
+
+      // Converter datas para timestamp para comparação
+      const startTimestamp = new Date(startDate + "T00:00:00").getTime();
+      const endTimestamp = new Date(endDate + "T23:59:59").getTime();
+
+      console.log("Timestamps de busca:", {
+        startTimestamp,
+        endTimestamp,
+        startDate: new Date(startTimestamp).toLocaleString("pt-BR"),
+        endDate: new Date(endTimestamp).toLocaleString("pt-BR"),
+      });
+
+      let allItems = [];
+      let lastEvaluatedKey = null;
+
+      // Scan apenas com filtro de freezerId (timestamp é string, não dá para filtrar no DynamoDB)
+      do {
+        const params = {
+          TableName: TABLE_NAME,
+          FilterExpression: "freezerId = :freezerId",
+          ExpressionAttributeValues: {
+            ":freezerId": freezerId,
+          },
+        };
+
+        if (lastEvaluatedKey) {
+          params.ExclusiveStartKey = lastEvaluatedKey;
+        }
+
+        const command = new ScanCommand(params);
+        const response = await dynamoDB.send(command);
+
+        if (response.Items && response.Items.length > 0) {
+          console.log(`Página recebida: ${response.Items.length} itens`);
+
+          // Filtrar por data no lado do cliente (timestamp é string)
+          const filteredItems = response.Items.filter((item) => {
+            const itemTimestamp = dateStringToTimestamp(item.timestamp);
+            const isInRange =
+              itemTimestamp >= startTimestamp && itemTimestamp <= endTimestamp;
+
+            if (!isInRange) {
+              console.log("Item fora do período:", {
+                timestamp: item.timestamp,
+                itemTimestamp,
+                startTimestamp,
+                endTimestamp,
+              });
+            }
+
+            return isInRange;
+          });
+
+          console.log(`Filtrados nesta página: ${filteredItems.length} itens`);
+          allItems = [...allItems, ...filteredItems];
+        }
+
+        lastEvaluatedKey = response.LastEvaluatedKey;
+      } while (lastEvaluatedKey);
+
+      console.log(`Total de registros encontrados: ${allItems.length}`);
+      return allItems;
+    } catch (error) {
+      console.error("Erro ao buscar dados do DynamoDB:", error);
+      Alert.alert(
+        "Erro",
+        "Não foi possível buscar os dados de temperatura: " + error.message
+      );
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função para converter dados para CSV
+  const convertToCSV = (data) => {
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const headers = ["Freezer ID", "Temperatura", "Timestamp", "Unidade"];
+
+    // Ordenar dados por timestamp
+    const sortedData = [...data].sort((a, b) => {
+      return (
+        dateStringToTimestamp(a.timestamp) - dateStringToTimestamp(b.timestamp)
+      );
+    });
+
+    // Linhas de dados
+    const rows = sortedData.map((item) => {
+      return [
+        item.freezerId || "",
+        item.temperatura || "",
+        item.timestamp, // Já vem formatado do banco
+        item.unidade || "°C",
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    return csvContent;
+  };
+
+  const downloadData = async (startDate, endDate, periodName) => {
+    try {
+      const data = await fetchTemperatureData(
+        currentFreezer,
+        startDate,
+        endDate
+      );
+
+      if (!data || data.length === 0) {
+        Alert.alert(
+          "Aviso",
+          `Nenhum dado encontrado para o Freezer ${currentFreezer} no período selecionado`
+        );
+        return;
+      }
+
+      const csvContent = convertToCSV(data);
+
+      if (!csvContent) {
+        Alert.alert("Erro", "Não foi possível gerar o arquivo CSV");
+        return;
+      }
+
+      const fileName = `temperatura_freezer${currentFreezer}_${periodName}_${new Date().getTime()}.csv`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      // Salvar arquivo (sem especificar encoding)
+      await FileSystem.writeAsStringAsync(fileUri, csvContent);
+
+      // Compartilhar arquivo
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: "text/csv",
+          dialogTitle: `Exportar dados do Freezer ${currentFreezer}`,
+        });
+        Alert.alert(
+          "Sucesso!",
+          `${data.length} registros do Freezer ${currentFreezer} exportados com sucesso!`
+        );
+      } else {
+        Alert.alert(
+          "Arquivo Salvo",
+          `${data.length} registros salvos em:\n${fileUri}`
+        );
+      }
+    } catch (error) {
+      console.error("Erro ao baixar dados:", error);
+      Alert.alert("Erro", "Não foi possível baixar os dados: " + error.message);
+    }
+  };
+
+  const downloadToday = () => {
+    const today = new Date().toISOString().split("T")[0];
+    Alert.alert(
+      "Confirmar Download",
+      `Deseja baixar os dados de hoje do Freezer ${currentFreezer}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: () => downloadData(today, today, "hoje"),
+        },
+      ]
+    );
+  };
+
+  const downloadLast7Days = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+
+    Alert.alert(
+      "Confirmar Download",
+      `Deseja baixar os dados dos últimos 7 dias do Freezer ${currentFreezer}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: () =>
+            downloadData(
+              startDate.toISOString().split("T")[0],
+              endDate.toISOString().split("T")[0],
+              "ultimos_7_dias"
+            ),
+        },
+      ]
+    );
+  };
+
+  const downloadLast30Days = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+
+    Alert.alert(
+      "Confirmar Download",
+      `Deseja baixar os dados dos últimos 30 dias do Freezer ${currentFreezer}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: () =>
+            downloadData(
+              startDate.toISOString().split("T")[0],
+              endDate.toISOString().split("T")[0],
+              "ultimos_30_dias"
+            ),
+        },
+      ]
+    );
+  };
+
+  const downloadSelectedPeriod = () => {
+    const dates = Object.keys(selectedDates).sort();
+
+    if (dates.length === 0) {
+      Alert.alert("Aviso", "Selecione uma data ou período no calendário");
+      return;
+    }
+
+    const startDate = dates[0];
+    const endDate = dates[dates.length - 1];
+
+    Alert.alert(
+      "Confirmação",
+      `Deseja baixar os dados de temperatura do Freezer ${currentFreezer} de ${startDate
+        .split("-")
+        .reverse()
+        .join("/")} até ${endDate.split("-").reverse().join("/")}?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Confirmar",
+          onPress: () => {
+            downloadData(startDate, endDate, "periodo_selecionado");
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const confirmFreezerChange = () => {
+    if (tempFreezer === currentFreezer) {
+      Alert.alert("Aviso", "Este freezer já está selecionado");
+      setModalVisible(false);
+      return;
+    }
+
+    Alert.alert(
+      "Confirmação",
+      `Deseja realmente mudar para o Freezer ${tempFreezer}?`,
+      [
+        {
+          text: "Cancelar",
+          onPress: () => {
+            setModalVisible(false);
+            setTempFreezer(currentFreezer);
+          },
+          style: "cancel",
+        },
+        {
+          text: "Confirmar",
+          onPress: () => {
+            setCurrentFreezer(tempFreezer);
+            setModalVisible(false);
+            setSelectedDates({});
+            Alert.alert(
+              "Sucesso",
+              `Visualizando dados do Freezer ${tempFreezer}`
+            );
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
   return (
     <SafeAreaView
       style={{
@@ -36,42 +381,40 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
           <View style={styles.logoContainer}>
             <TouchableOpacity
               style={styles.drawer}
-              onPress={() =>
-                navigation.openDrawer()
-              }
+              onPress={() => navigation.openDrawer()}
             >
-              <Ionicons
-                name="menu"
-                size={50}
-                color="#305F49"
-              />
+              <Ionicons name="menu" size={50} color="#305F49" />
             </TouchableOpacity>
-            <Image
-              style={styles.logo}
-              source={require("../assets/logo.png")}
-            />
+            <Image style={styles.logo} source={require("../assets/logo.png")} />
           </View>
-
 
           <View style={styles.content}>
             <View style={styles.card}>
               <Text style={styles.textSmall}>
-                Você está visualizando a temperatura do freezer 2
+                Você está visualizando a temperatura do freezer {currentFreezer}
               </Text>
               <View style={styles.freezerInfo}>
-                <TouchableOpacity style={styles.button} onPress={() => {
-                  setModalVisible(true)
-                  setEditModalVisible(true);
-                }}
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => {
+                    setTempFreezer(currentFreezer);
+                    setModalVisible(true);
+                  }}
+                  disabled={isLoading}
                 >
                   <Text style={styles.buttonText}>Mudar freezer</Text>
                 </TouchableOpacity>
-                <Modal isVisible={isModalVisible}
-                  backdropOpacity={0.1}
-                  onBackdropPress={() => setModalVisible(false)}>
+
+                <Modal
+                  isVisible={isModalVisible}
+                  backdropOpacity={0.5}
+                  onBackdropPress={() => {
+                    setModalVisible(false);
+                    setTempFreezer(currentFreezer);
+                  }}
+                >
                   <View style={styles.modalContainer}>
                     <View style={styles.modalBox}>
-
                       <Text style={styles.modalTitle}>
                         Você deseja mudar para qual freezer?
                       </Text>
@@ -81,11 +424,13 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                           <TouchableOpacity
                             key={item}
                             style={styles.freezerItem}
-                            onPress={() => setFreezer(item)}
+                            onPress={() => setTempFreezer(item)}
                           >
-                            {freezer === item && (
+                            {tempFreezer === item && (
                               <View style={styles.selectedBadge}>
-                                <Text style={styles.selectedBadgeText}>Selecionado</Text>
+                                <Text style={styles.selectedBadgeText}>
+                                  Selecionado
+                                </Text>
                               </View>
                             )}
 
@@ -93,73 +438,92 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                               style={styles.iconFreezerModal}
                               source={require("../assets/icon-freezer.png")}
                             />
-                            <Text style={styles.freezerLabel}>Freezer {item}</Text>
+                            <Text style={styles.freezerLabel}>
+                              Freezer {item}
+                            </Text>
                           </TouchableOpacity>
                         ))}
                       </View>
 
                       <View style={styles.modalActions}>
-                        <TouchableOpacity style={styles.cancelBtn}
-                          onPress={() => setModalVisible(false)}
+                        <TouchableOpacity
+                          style={styles.cancelBtn}
+                          onPress={() => {
+                            setModalVisible(false);
+                            setTempFreezer(currentFreezer);
+                          }}
                         >
                           <Text style={styles.cancelText}>Cancelar</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.confirmBtn}
-                          onPress={() => {
-                            Alert.alert(
-                              "Confirmação",
-                              "Deseja realmente mudar o freezer?",
-                              [
-                                {
-                                  text: "Cancelar",
-                                  onPress: () => {
-                                    setModalVisible(false);
-                                  },
-                                  style: "cancel",
-                                },
-                                {
-                                  text: "Confirmar",
-                                  onPress: () => {
-                                    setModalVisible(false);
-                                  },
-                                },
-                              ],
-                              { cancelable: false }
-                            );
-                          }}
+                        <TouchableOpacity
+                          style={styles.confirmBtn}
+                          onPress={confirmFreezerChange}
                         >
                           <Text style={styles.confirmText}>Confirmar</Text>
                         </TouchableOpacity>
                       </View>
-
                     </View>
                   </View>
                 </Modal>
+
                 <View style={styles.freezerLogo}>
                   <Image
                     style={styles.iconFreezer}
                     source={require("../assets/icon-freezer.png")}
                   />
-                  <Text style={styles.freezerLabel}>Freezer 2</Text>
+                  <Text style={styles.freezerLabel}>
+                    Freezer {currentFreezer}
+                  </Text>
                 </View>
               </View>
             </View>
+
             <View style={styles.downloadBox}>
               <Text style={styles.downloadTitle}>
                 Escolha o período para recuperar os dados de temperatura
               </Text>
-              <TouchableOpacity style={styles.downloadButton}>
-                <Text style={styles.downloadText}>Baixar dados de hoje</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.downloadButton}>
-                <Text style={styles.downloadText}>Baixar dados dos últimos 7 dias</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.downloadButton}>
+              <TouchableOpacity
+                style={[
+                  styles.downloadButton,
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={downloadToday}
+                disabled={isLoading}
+              >
                 <Text style={styles.downloadText}>
-                  Baixar dados dos últimos 30 dias
+                  {isLoading ? "Processando..." : "Baixar dados de hoje"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.downloadButton,
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={downloadLast7Days}
+                disabled={isLoading}
+              >
+                <Text style={styles.downloadText}>
+                  {isLoading
+                    ? "Processando..."
+                    : "Baixar dados dos últimos 7 dias"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.downloadButton,
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={downloadLast30Days}
+                disabled={isLoading}
+              >
+                <Text style={styles.downloadText}>
+                  {isLoading
+                    ? "Processando..."
+                    : "Baixar dados dos últimos 30 dias"}
                 </Text>
               </TouchableOpacity>
             </View>
+
             <View style={styles.calendarWrapper}>
               <Text style={styles.calenderTitle}>
                 Escolha uma data ou período para consultar a temperatura
@@ -174,7 +538,10 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                 onDayPress={(day) => {
                   const start = Object.keys(selectedDates)[0];
 
-                  if (!start || (start && Object.keys(selectedDates).length > 1)) {
+                  if (
+                    !start ||
+                    (start && Object.keys(selectedDates).length > 1)
+                  ) {
                     setSelectedDates({
                       [day.dateString]: {
                         startingDay: true,
@@ -201,26 +568,16 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                   }
                 }}
               />
-              <TouchableOpacity style={styles.calendarButton}
-                onPress={() => {
-                  Alert.alert(
-                    "Confirmação",
-                    "Deseja realmente baixar os dados de temperatura dos dias selecionados?",
-                    [
-                      {
-                        text: "Cancelar",
-                        style: "cancel",
-                      },
-                      {
-                        text: "Confirmar",
-                      },
-                    ],
-                    { cancelable: false }
-                  );
-                }}
+              <TouchableOpacity
+                style={[
+                  styles.calendarButton,
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={downloadSelectedPeriod}
+                disabled={isLoading}
               >
                 <Text style={styles.calendarText}>
-                  Baixar período selecionado
+                  {isLoading ? "Processando..." : "Baixar período selecionado"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -230,6 +587,7 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
 function getDateRange(start, end) {
   const range = [];
   const startDate = new Date(start);
@@ -242,25 +600,49 @@ function getDateRange(start, end) {
   return range;
 }
 
-LocaleConfig.locales['pt'] = {
+LocaleConfig.locales["pt"] = {
   monthNames: [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
   ],
   monthNamesShort: [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
   ],
   dayNames: [
-    'Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'
+    "Domingo",
+    "Segunda",
+    "Terça",
+    "Quarta",
+    "Quinta",
+    "Sexta",
+    "Sábado",
   ],
-  dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
-  today: 'Hoje'
+  dayNamesShort: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+  today: "Hoje",
 };
 
-// Define o idioma padrão como português
-LocaleConfig.defaultLocale = 'pt';
-
+LocaleConfig.defaultLocale = "pt";
 
 const styles = StyleSheet.create({
   container: {
@@ -291,7 +673,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 5,
   },
-
   calendarTheme: {
     backgroundColor: "transparent",
     calendarBackground: "transparent",
@@ -305,7 +686,6 @@ const styles = StyleSheet.create({
     textDayFontSize: 15,
     textSectionTitleColor: "#FFFFFF",
   },
-
   logoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -337,7 +717,6 @@ const styles = StyleSheet.create({
     height: 80,
     width: 80,
   },
-
   freezerInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -351,30 +730,6 @@ const styles = StyleSheet.create({
   },
   freezerLogo: {
     marginTop: -50,
-  },
-  textArea: {
-    width: "65%",
-  },
-  freezerText: {
-    color: "#244C38",
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  button: {
-    backgroundColor: "#C6E0CF",
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    alignSelf: "flex-start",
-  },
-  imageArea: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  freezerIcon: {
-    width: 40,
-    height: 40,
-    marginBottom: 5,
   },
   button: {
     paddingVertical: 8,
@@ -413,16 +768,16 @@ const styles = StyleSheet.create({
   },
   downloadButton: {
     height: 45,
-    width: '80%',
+    width: "80%",
     borderRadius: 10,
     marginBottom: 10,
     alignItems: "center",
-    justifyContent: 'center',
+    justifyContent: "center",
     backgroundColor: "rgba(255,255,255, 0.5)",
   },
   calendarButton: {
     height: 45,
-    width: '100%',
+    width: "100%",
     borderRadius: 10,
     marginBottom: 10,
     marginTop: 10,
@@ -434,24 +789,24 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   calendarText: {
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 45,
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
   },
-
-    modalContainer: {
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
-    iconFreezerModal: {
+  iconFreezerModal: {
     height: 50,
     width: 50,
   },
-
   modalBox: {
     width: "85%",
     backgroundColor: "#305F49",
@@ -464,7 +819,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 10,
   },
-
   modalTitle: {
     fontSize: 20,
     color: "#FFFFFF",
@@ -472,27 +826,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-
   freezerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     marginBottom: 25,
   },
-
   freezerItem: {
     width: "45%",
     alignItems: "center",
     marginBottom: 20,
   },
-
-  freezerLabel: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-
   selectedBadge: {
     backgroundColor: "#9FD1B7",
     paddingVertical: 4,
@@ -500,18 +844,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 6,
   },
-
   selectedBadgeText: {
     fontSize: 12,
     color: "#fff",
     fontWeight: "bold",
   },
-
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-
   confirmBtn: {
     backgroundColor: "#9FD1B7",
     paddingVertical: 12,
@@ -520,7 +861,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     alignItems: "center",
   },
-
   cancelBtn: {
     backgroundColor: "#fff",
     paddingVertical: 12,
@@ -529,22 +869,12 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     alignItems: "center",
   },
-
   confirmText: {
     color: "#fff",
     fontWeight: "bold",
   },
-
   cancelText: {
     color: "#305F49",
     fontWeight: "bold",
-  },
-   chartContainer: {
-    backgroundColor: "#679880",
-    borderRadius: 12,
-    padding: 10,
-    alignItems: "center",
-    width: "90%",
-    marginBottom: 25,
   },
 });

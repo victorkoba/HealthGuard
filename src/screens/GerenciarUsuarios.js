@@ -48,12 +48,12 @@ export default function GerenciarUsuariosScreen({ navigation }) {
     try {
       setLoading(true);
       const data = await dynamoDB.send(
-        new ScanCommand({ TableName: "usuarios" })
+        new ScanCommand({ TableName: "Usuarios" })
       );
 
       const lista =
         data.Items?.map((item) => ({
-          id: item.id.N,
+          id: item.id.S,
           nome: item.nome.S,
           email: item.email.S,
           tipo: item.tipo?.S || "funcionario",
@@ -83,7 +83,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
     try {
       // 🔍 Verifica se já existe e-mail igual
       const existente = await dynamoDB.send(
-        new ScanCommand({ TableName: "usuarios" })
+        new ScanCommand({ TableName: "Usuarios" })
       );
       const jaExiste = existente.Items?.some((u) => u.email.S === novoEmail);
       if (jaExiste) {
@@ -94,9 +94,9 @@ export default function GerenciarUsuariosScreen({ navigation }) {
       const hashedSenha = await bcrypt.hash(novaSenha, 10);
 
       const params = {
-        TableName: "usuarios",
+        TableName: "Usuarios",
         Item: {
-          id: { N: Date.now().toString() },
+          id: { S: Date.now().toString() },
           nome: { S: novoNome },
           email: { S: novoEmail },
           senha: { S: hashedSenha },
@@ -151,8 +151,8 @@ export default function GerenciarUsuariosScreen({ navigation }) {
       }
 
       const params = {
-        TableName: "usuarios",
-        Key: { id: { N: usuarioEditando.id } },
+        TableName: "Usuarios",
+        Key: { id: { S: usuarioEditando.id } },
         UpdateExpression:
           "SET nome = :nome, tipo = :tipo" +
           (novaSenha ? ", senha = :senha" : ""),
@@ -185,7 +185,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
           try {
             await dynamoDB.send(
               new DeleteItemCommand({
-                TableName: "usuarios",
+                TableName: "Usuarios",
                 Key: { id: { N: id } },
               })
             );
