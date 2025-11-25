@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand  } from "@aws-sdk/lib-dynamodb";
 import bcrypt from "bcryptjs";
 import { dynamoDB } from "../../awsConfig";
 
@@ -21,75 +21,61 @@ export default function LoginScreen({ navigation }) {
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fazerLogin = async () => {
-    if (!email || !senha) {
-      Alert.alert("Erro", "Preencha todos os campos!");
+ const fazerLogin = async () => {
+  if (!email || !senha) {
+    Alert.alert("Erro", "Preencha todos os campos!");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const data = await dynamoDB.send(
+      new QueryCommand({
+        TableName: "usuarios",
+        IndexName: "email-index", // ✅ usa o índice corretamente
+        KeyConditionExpression: "email = :email",
+        ExpressionAttributeValues: {
+          ":email": email,
+        },
+      })
+    );
+
+    if (!data.Items || data.Items.length === 0) {
+      Alert.alert("Erro", "Usuário não encontrado!");
       return;
     }
 
-    setLoading(true);
-    try {
-      // 🔍 Busca o usuário pelo email no DynamoDB
-      const data = await dynamoDB.send(
-        new ScanCommand({
-          TableName: "Usuarios",
-          FilterExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": email,
-          },
-        })
-      );
+    const usuario = data.Items[0];
 
-      if (!data.Items || data.Items.length === 0) {
-        Alert.alert("Erro", "Usuário não encontrado!");
-        setLoading(false);
-        return;
-      }
+    const senhaHash = usuario.senha; // ✅ NÃO usa mais .S
 
-      const usuario = data.Items[0];
-      const senhaHash = usuario.senha;
+    const senhaCorreta = await bcrypt.compare(senha, senhaHash);
 
-      // 🔐 Compara a senha digitada com o hash salvo
-      const senhaCorreta = await bcrypt.compare(senha, senhaHash);
-
-      if (!senhaCorreta) {
-        Alert.alert("Erro", "Senha incorreta!");
-        setLoading(false);
-        return;
-      }
-
-      // ✅ Login bem-sucedido
-      const tipoUsuario = usuario.tipo.S;
-
-      // 💾 Armazena informações do usuário logado
-      // Formata os dados do DynamoDB para objetos JS normais
-      const usuarioFormatado = {
-        id: usuario.id,
-        nome: usuario.nome,
-        email: usuario.email,
-        tipo: usuario.tipo,
-      };
-
-      await AsyncStorage.setItem(
-        "usuarioLogado",
-        JSON.stringify(usuarioFormatado)
-      );
-      await AsyncStorage.setItem("usuarioId", usuarioFormatado.id);
-
-      Alert.alert("Sucesso", `Bem-vindo, ${usuarioFormatado.nome}!`);
-
-      if (tipoUsuario === "admin") {
-        navigation.navigate("Inicio"); // Tela de admin
-      } else {
-        navigation.navigate("Inicio"); // Tela de funcionário
-      }
-    } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      Alert.alert("Erro", "Falha na autenticação. Tente novamente.");
-    } finally {
-      setLoading(false);
+    if (!senhaCorreta) {
+      Alert.alert("Erro", "Senha incorreta!");
+      return;
     }
-  };
+
+const usuarioFormatado = {
+  id: String(usuario.id), // ✅ converte para string
+  nome: usuario.nome,
+  email: usuario.email,
+  tipo: usuario.tipo,
+};
+
+await AsyncStorage.setItem("usuarioId", String(usuarioFormatado.id));
+
+    Alert.alert("Sucesso", `Bem-vindo, ${usuarioFormatado.nome}!`);
+    navigation.navigate("Inicio");
+
+  } catch (error) {
+    console.error("Erro ao fazer login:", error);
+    Alert.alert("Erro", "Falha na autenticação.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>

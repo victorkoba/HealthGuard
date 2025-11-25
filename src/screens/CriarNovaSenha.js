@@ -6,15 +6,51 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function RedefinirSenha({
-  navigation,
-}) {
-  const [senhaNova, setSenhaNova] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
+export default function NewPassword({ navigation, route }) {
+  const { email, code } = route.params;
+
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleChangePassword = async () => {
+    if (!password || !confirmPassword) {
+      Alert.alert('Erro', 'Preencha todos os campos');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas não coincidem');
+      return;
+    }
+
+    try {
+      const res = await fetch('https://jsuitlgn0e.execute-api.us-east-1.amazonaws.com/prod/reset-password/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+  email: email,
+  novaSenha: password
+}),
+
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        Alert.alert('Sucesso', 'Senha alterada com sucesso');
+        navigation.navigate('Login');
+      } else {
+        Alert.alert('Erro', data.message || 'Erro ao alterar senha');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro de conexão');
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
@@ -48,8 +84,8 @@ export default function RedefinirSenha({
             style={styles.input}
             placeholder="Digite sua nova senha"
             placeholderTextColor="#fff"
-            value={senhaNova}
-            onChangeText={setSenhaNova}
+            value={password}
+            onChangeText={setPassword}
             secureTextEntry
           />
         </View>
@@ -59,16 +95,14 @@ export default function RedefinirSenha({
             style={styles.input}
             placeholder="Digite a senha novamente"
             placeholderTextColor="#fff"
-            value={confirmarSenha}
-            onChangeText={setConfirmarSenha}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry
           />
         </View>
         <TouchableOpacity
           style={styles.button}
-          onPress={() =>
-            navigation.navigate("Login")
-          }
+          onPress={handleChangePassword}
         >
           <Text style={styles.buttonText}>
             Confirmar
