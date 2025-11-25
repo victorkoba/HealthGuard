@@ -42,7 +42,7 @@ Nos arquivos, altere as credenciais da AWS: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
 #Como depurar o projeto
 Ative o ambiente Anaconda: conda activate yolo
 
-Execute o script em pyhton (de acordo com o caminho que está instalado a plaicação): 
+Execute o script em pyhton (de acordo com o caminho que está instalado a aplicação): 
 caminho_do_arquivo_da_aplicação\python deteccao_frascos.py
 
 
