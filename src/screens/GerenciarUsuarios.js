@@ -186,7 +186,7 @@ export default function GerenciarUsuariosScreen({ navigation }) {
             await dynamoDB.send(
               new DeleteItemCommand({
                 TableName: "Usuarios",
-                Key: { id: { N: id } },
+                Key: { id: { S: id } },
               })
             );
             Alert.alert("Sucesso", "Usuário excluído com sucesso!");
@@ -284,7 +284,6 @@ export default function GerenciarUsuariosScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* MODAL DE CRIAÇÃO */}
       <Modal
         isVisible={isAddModalVisible}
         onBackdropPress={() => setAddModalVisible(false)}
@@ -545,7 +544,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
   },
   modalBox: {
     width: "80%",

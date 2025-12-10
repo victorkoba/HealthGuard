@@ -6,14 +6,44 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function RedefinirSenha({
-  navigation,
-}) {
-  const [senha, setSenha] = useState("");
+export default function ForgotPasswordEmail({ navigation }) {
+  const [email, setEmail] = useState('');
+
+  const handleSendCode = async () => {
+    if (!email) {
+      Alert.alert('Erro', 'Digite seu email');
+      return;
+    }
+
+    // Exemplo de chamada para o backend
+    try {
+      const res = await fetch(
+  'https://jsuitlgn0e.execute-api.us-east-1.amazonaws.com/prod/reset-password/request',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  }
+);
+
+
+      const data = await res.json();
+
+      if (data.success) {
+    Alert.alert('Código gerado', `Código: ${data.code}`);
+    navigation.navigate('InserirCodigo', { email });
+      } else {
+        Alert.alert('Erro', data.message || 'Erro ao enviar código');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro de conexão');
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
@@ -47,8 +77,8 @@ export default function RedefinirSenha({
             style={styles.input}
             placeholder="Digite seu email"
             placeholderTextColor="#fff"
-            value={senha}
-            onChangeText={setSenha}
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
         <View style={styles.contentText}>
@@ -60,9 +90,7 @@ export default function RedefinirSenha({
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() =>
-            navigation.navigate("InserirCodigo")
-          }
+          onPress={handleSendCode}
         >
           <Text style={styles.buttonText}>
             Confirmar

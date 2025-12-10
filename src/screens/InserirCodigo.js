@@ -6,14 +6,39 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function RedefinirSenha({
-  navigation,
-}) {
-  const [senha, setSenha] = useState("");
+export default function VerifyCode({ navigation, route }) {
+  const { email } = route.params;
+  const [code, setCode] = useState('');
+
+  const handleVerifyCode = async () => {
+    if (!code) {
+      Alert.alert('Erro', 'Digite o código');
+      return;
+    }
+
+    try {
+      const res = await fetch('https://jsuitlgn0e.execute-api.us-east-1.amazonaws.com/prod/reset-password/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        navigation.navigate('CriarNovaSenha', { email, code });
+      } else {
+        Alert.alert('Erro', 'Código inválido');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro de conexão');
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
@@ -47,9 +72,10 @@ export default function RedefinirSenha({
             style={styles.input}
             placeholder="Digite o código recebido"
             placeholderTextColor="#fff"
-            value={senha}
-            onChangeText={setSenha}
-          />
+            value={code}
+            onChangeText={setCode}
+            keyboardType="numeric"
+            />
         </View>
         <View style={styles.contentText}>
           <Text style={styles.info}>
@@ -59,9 +85,7 @@ export default function RedefinirSenha({
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() =>
-            navigation.navigate("CriarNovaSenha")
-          }
+          onPress={handleVerifyCode}
         >
           <Text style={styles.buttonText}>
             Enviar Código
