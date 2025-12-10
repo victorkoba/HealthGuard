@@ -28,7 +28,7 @@ def inserir_dados_fake():
         # Formatar timestamp como string: "DD/MM/YYYY HH:MM:SS"
         timestamp_str = timestamp_dt.strftime("%d/%m/%Y %H:%M:%S")
 
-        temperatura = round(random.uniform(15.0, 35.0), 1)
+        temperatura = round(random.uniform(-1.0, 10.0), 1)
         umidade = round(random.uniform(40.0, 90.0), 1)
 
         # Freezer aleatório entre 1 e 4 (ajustei para 4 freezers como no app)

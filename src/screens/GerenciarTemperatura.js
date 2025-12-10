@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Text,
   StyleSheet,
@@ -32,17 +32,18 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
   const [time, setTime] = useState("--");
   const [isModalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const scrollViewRef = useRef(null);
 
   // Dados dos gráficos
   const [grafico24h, setGrafico24h] = useState({
-    labels: ["12:00", "12:30", "13:00", "13:30", "14:00", "Agora"],
-    data: [5, 9, 10, 12, 4, 3],
+    labels: [],
+    data: [],
   });
 
   const [graficoSemana, setGraficoSemana] = useState({
-    labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
-    maxData: [12, 8, 11, 14, 10, 9, 9],
-    minData: [8, 6, 7, 10, 9, 8, 8],
+    labels: [],
+    maxData: [],
+    minData: [],
   });
 
   // Carrega temperatura atual e min/max
@@ -66,14 +67,25 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
 
       // Busca dados para gráfico de 24h
       const dados24h = await getTemperaturas24h(freezerAtual);
-      if (dados24h.labels.length > 0) {
+      console.log("Dados 24h recebidos:", dados24h);
+      if (dados24h && dados24h.labels && dados24h.labels.length > 0) {
         setGrafico24h(dados24h);
+      } else {
+        setGrafico24h({ labels: [], data: [] });
       }
 
       // Busca dados para gráfico semanal
       const dadosSemana = await getTemperaturaSemana(freezerAtual);
-      if (dadosSemana.labels.length > 0) {
-        setGraficoSemana(dadosSemana);
+      console.log("Dados semana recebidos:", dadosSemana);
+
+      if (dadosSemana && dadosSemana.labels && dadosSemana.labels.length > 0) {
+        setGraficoSemana({
+          labels: dadosSemana.labels,
+          maxData: dadosSemana.maxData || dadosSemana.max || [],
+          minData: dadosSemana.minData || dadosSemana.min || [],
+        });
+      } else {
+        setGraficoSemana({ labels: [], maxData: [], minData: [] });
       }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -119,7 +131,10 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#305F49" }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+      >
         <View style={styles.container}>
           <View style={styles.logoContainer}>
             <TouchableOpacity
@@ -141,6 +156,7 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.button}
                   onPress={() => setModalVisible(true)}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.buttonText}>Mudar freezer</Text>
                 </TouchableOpacity>
@@ -165,6 +181,8 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                 setModalVisible(false);
                 setFreezerSelecionado(freezerAtual);
               }}
+              useNativeDriver={true}
+              hideModalContentWhileAnimating={true}
             >
               <View style={styles.modalContainer}>
                 <View style={styles.modalBox}>
@@ -178,6 +196,7 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                         key={item}
                         style={styles.freezerItem}
                         onPress={() => setFreezerSelecionado(item)}
+                        activeOpacity={0.7}
                       >
                         {freezerSelecionado === item && (
                           <View style={styles.selectedBadge}>
@@ -202,12 +221,14 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                         setModalVisible(false);
                         setFreezerSelecionado(freezerAtual);
                       }}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.cancelText}>Cancelar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.confirmBtn}
                       onPress={confirmarMudancaFreezer}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.confirmText}>Confirmar</Text>
                     </TouchableOpacity>
@@ -227,12 +248,6 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                   Temperatura atual dentro do freezer {freezerAtual}
                 </Text>
                 <Text style={styles.temp}>{temp}°</Text>
-                {/* <Text style={styles.subTemp}>
-                  {maxTemp}° / {minTemp}°
-                </Text> */}
-                {/* <Text style={styles.lastUpdate}>
-                  Última atualização: {time}
-                </Text> */}
               </View>
             )}
 
@@ -250,9 +265,12 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
               <View style={styles.chart}>
                 {loading ? (
                   <ActivityIndicator size="large" color="#fff" />
+                ) : grafico24h.labels.length === 0 ? (
+                  <Text style={styles.noDataText}>
+                    Sem dados disponíveis para este período
+                  </Text>
                 ) : (
                   <>
-                    {/* ---- EIXO Y FIXO (APENAS TEXTO) ---- */}
                     <View
                       style={{
                         position: "absolute",
@@ -266,20 +284,16 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                       </Text>
                     </View>
 
-                    {/* ---- ÁREA DO GRÁFICO SCROLLÁVEL ---- */}
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      style={{ marginLeft: 40 }} // espaço para o eixo Y fixo
-                      ref={(ref) => {
-                        if (ref) {
-                          setTimeout(
-                            () => ref.scrollToEnd({ animated: false }),
-                            100
-                          );
-                        }
+                      style={{ marginLeft: 40 }}
+                      ref={scrollViewRef}
+                      onContentSizeChange={() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: false });
                       }}
                       contentContainerStyle={{ paddingRight: 20 }}
+                      nestedScrollEnabled={true}
                     >
                       <LineChart
                         data={{
@@ -294,7 +308,10 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                             },
                           ],
                         }}
-                        width={grafico24h.labels.length * 80} // espaçamento entre os pontos
+                        width={Math.max(
+                          grafico24h.labels.length * 80,
+                          screenWidth * 0.8
+                        )}
                         height={240}
                         withInnerLines={true}
                         withHorizontalLines={true}
@@ -318,7 +335,6 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
                       />
                     </ScrollView>
 
-                    {/* ---- EIXO X FIXO (HORÁRIO) ---- */}
                     <View
                       style={{
                         position: "absolute",
@@ -350,58 +366,72 @@ export default function GerenciarTemperaturaScreen({ navigation }) {
 
               {loading ? (
                 <ActivityIndicator size="large" color="#fff" />
+              ) : graficoSemana.labels.length === 0 ? (
+                <View style={styles.noDataContainer}>
+                  <Text style={styles.noDataText}>
+                    Sem dados disponíveis para esta semana
+                  </Text>
+                </View>
               ) : (
-                <LineChart
-                  data={{
-                    labels: graficoSemana.labels,
-                    datasets: [
-                      {
-                        data:
-                          graficoSemana.maxData.length > 0
-                            ? graficoSemana.maxData
-                            : [0],
-                        color: () => "#244C38",
+                <>
+                  <LineChart
+                    data={{
+                      labels: graficoSemana.labels,
+                      datasets: [
+                        {
+                          data:
+                            graficoSemana.maxData.length > 0
+                              ? graficoSemana.maxData
+                              : [0],
+                          color: () => "#244C38",
+                        },
+                        {
+                          data:
+                            graficoSemana.minData.length > 0
+                              ? graficoSemana.minData
+                              : [0],
+                          color: () => "#ffffffbe",
+                        },
+                      ],
+                    }}
+                    width={screenWidth * 0.9}
+                    height={220}
+                    formatYLabel={(value) => `${parseInt(value)}°C`}
+                    chartConfig={{
+                      backgroundGradientFrom: "#679880",
+                      backgroundGradientTo: "#679880",
+                      color: () => "#244C38",
+                      labelColor: () => "#fff",
+                      propsForBackgroundLines: {
+                        stroke: "transparent",
                       },
-                      {
-                        data:
-                          graficoSemana.minData.length > 0
-                            ? graficoSemana.minData
-                            : [0],
-                        color: () => "#ffffffbe",
-                      },
-                    ],
-                  }}
-                  width={screenWidth * 0.9}
-                  height={220}
-                  formatYLabel={(value) => `${parseInt(value)}°C`}
-                  chartConfig={{
-                    backgroundGradientFrom: "#679880",
-                    backgroundGradientTo: "#679880",
-                    color: () => "#244C38",
-                    labelColor: () => "#fff",
-                    propsForBackgroundLines: {
-                      stroke: "transparent",
-                    },
-                  }}
-                  bezier
-                  style={{ borderRadius: 12 }}
-                />
-              )}
+                    }}
+                    bezier
+                    style={{ borderRadius: 12 }}
+                  />
 
-              <View style={styles.legendContainer}>
-                <View style={styles.legendItem}>
-                  <View
-                    style={[styles.colorBox, { backgroundColor: "#244C38" }]}
-                  />
-                  <Text style={styles.legendText}>Temperatura máxima</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View
-                    style={[styles.colorBox, { backgroundColor: "#ffffffff" }]}
-                  />
-                  <Text style={styles.legendText}>Temperatura mínima</Text>
-                </View>
-              </View>
+                  <View style={styles.legendContainer}>
+                    <View style={styles.legendItem}>
+                      <View
+                        style={[
+                          styles.colorBox,
+                          { backgroundColor: "#244C38" },
+                        ]}
+                      />
+                      <Text style={styles.legendText}>Temperatura máxima</Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                      <View
+                        style={[
+                          styles.colorBox,
+                          { backgroundColor: "#ffffffff" },
+                        ]}
+                      />
+                      <Text style={styles.legendText}>Temperatura mínima</Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -674,5 +704,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#fff",
     fontWeight: "600",
+  },
+  noDataContainer: {
+    height: 220,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noDataText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "600",
+    opacity: 0.8,
   },
 });
