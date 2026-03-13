@@ -44,5 +44,3 @@ Ative o ambiente Anaconda: conda activate yolo
 
 Execute o script em pyhton (de acordo com o caminho que está instalado a aplicação): 
 caminho_do_arquivo_da_aplicação\python deteccao_frascos.py
-
-
